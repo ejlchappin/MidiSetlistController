@@ -5,12 +5,15 @@ The controller is developed in order to be very quick in making and modifying ra
 
 # Install
 Save the application to disk: https://github.com/ejlchappin/MidiSetlistController/raw/master/MidiSetlistController.jar 
+
 Save the setlist to disk: https://raw.githubusercontent.com/ejlchappin/MidiSetlistController/master/setlist.ini
+
 Save the midi configuration to disk: https://raw.githubusercontent.com/ejlchappin/MidiSetlistController/master/config.ini
+
 The configuration (and setlist) needs to be adjusted for your own midi device (see below).
 
-Start command-line/terminal and navigate to the folder
-Start the application with:
+Start command-line/terminal and navigate to the folder. Start the application with:
+
 java -jar MidiSetlistController.jar
 
 # Using the MidiSetlistController
