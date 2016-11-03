@@ -31,9 +31,10 @@ import javax.swing.UnsupportedLookAndFeelException;
 import static midisetlistcontroller.MidiSetlistController.newline;
 
 /**
- * The MidiSetListController, enables quick but sophisticated setlists that
- * sends particular midi messages to synthesizers or other midi devices, for
- * live performances or studio usages.
+ * The MidiSetListController enables quick but sophisticated setlists with
+ * elements that sends particular midi messages to synthesizers or other midi
+ * devices, for live performances or studio usages, with intuitive navigation
+ * features
  *
  * The application configures midi system exclusive messages to shortcut
  * commands. Setlists contain those shortcuts to quickly and intuitively build
@@ -117,7 +118,7 @@ public class MidiSetlistController extends JFrame
     private static void createAndShowGUI() {
 
         //Create and set up the window.
-        MidiSetlistController frame = new MidiSetlistController("Midi programma");
+        MidiSetlistController frame = new MidiSetlistController("Midi Setlist Controller");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
 
