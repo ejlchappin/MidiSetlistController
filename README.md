@@ -21,15 +21,15 @@ When a setlist is loaded, you can navigate the setlist. With the arrow keys you 
 At the bottom of the screen, in large, the current item in the setlist is shown, for a clear view during live performances.
 
 # Configuring midi device
-The midi device is configured as follows. See the example below.
+The midi device is configured as follows. See the example below for an example (a Roland FA-08).
 
-The first line selects the midi device. The midi device is configured by name, which can be found by pressing D, which lists all the devices available in the system. In may case it is a Roland FA-08, which is listed as FA-06 08. The name is put on the first line of the config.ini file.
+The first line selects the *midi device*. The midi device is configured by name, which can be found by pressing D, which lists all the devices available in the system. The name is put on the first line of the config.ini file.
 
-The second line is reserved for the pedal command which is done by control change signal, i.e. the channel, control change and value. These three are put, comma-separated, in this order.
+The second line is reserved for the *pedal command* which is configured to a control change message, i.e. the channel, control change and value. These three are put, comma-separated, in this order.
 
-From the third line midi messages are configured, according to Shortcut,Midicode,InverseShortcut. First the shortcut, that is the shortcut used in your setlist, the System Exclusive Message formatted in 7bit bytes, and the inverse command shortcut to undo the change, if that is available. Here are two commands listed, the first enabling patch 1 and the second disabling patch 1. These are each others inverse commands, so the third element of +1 contains -1 and vice versa. 
+From the third line *midi message shortcuts* are configured, according to Shortcut,Midicode,InverseShortcut. First the shortcut, that is the shortcut used in your setlist, the System Exclusive Message formatted in 7bit bytes, and the inverse command shortcut to undo the change, if that is available. Here are two commands listed, the first enabling patch 1 and the second disabling patch 1. These are each others inverse commands, so the third element of +1 contains -1 and vice versa. 
 
-*Example config.ini: 
+*Example config.ini:*
 
 FA-06 08
 
@@ -57,7 +57,7 @@ The *incremental changes* are a comma-separated list of changes within the curre
 
 This implies that the preset shortcuts (in the example below 1, 12, 17), and the incremental change shortcuts (all the + and - codes) are midi codes configured for the midi device in config.ini. If codes are not configured, for instance because of a typo in the setlist, an error message is shown.
 
-*Example setlist.ini: 
+*Example setlist.ini:*
 
 Prestige 2016
 
