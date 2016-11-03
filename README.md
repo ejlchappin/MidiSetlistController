@@ -33,8 +33,11 @@ The second line is reserved for the pedal command which is done by control chang
 From the third line midi messages are configured. First the shortcut, that is the shortcut used in your setlist, the System Exclusive Message formatted in 7bit bytes, and the reverse command shortcut, if that is available. Here are two commands listed, the first enabling patch 1 and the second disabling patch 1. These are each others reverse, so the third element contains its reverse.  
 
 FA-06 08
+
 16,9,127
+
 +1,240 65 16 0 0 119 18 24 0 64 2 1 37 247,-1
+
 -1,240 65 16 0 0 119 18 24 0 64 2 0 38 247,+1
 
 # Finding your midi codes
