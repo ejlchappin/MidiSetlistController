@@ -6,9 +6,9 @@ The controller is developed in order to be very quick in making and modifying ra
 ![screenshot](https://github.com/ejlchappin/MidiSetlistController/raw/master/MidiSetlistController.png)
 
 ## Install
-* Save the application to disk: https://github.com/ejlchappin/MidiSetlistController/raw/master/MidiSetlistController.jar 
-* Save the setlist to disk: https://raw.githubusercontent.com/ejlchappin/MidiSetlistController/master/setlist.ini
-* Save the midi configuration to disk: https://raw.githubusercontent.com/ejlchappin/MidiSetlistController/master/config.ini
+* Save the [application](https://github.com/ejlchappin/MidiSetlistController/raw/master/MidiSetlistController.jar) to disk
+* Save the [midi configuration](to disk: https://raw.githubusercontent.com/ejlchappin/MidiSetlistController/master/config.ini) to disk
+* Save the [setlist](https://raw.githubusercontent.com/ejlchappin/MidiSetlistController/master/setlist.ini) to disk
 
 The configuration (and setlist) needs to be adjusted for your own midi device (see below). Start a command-line/terminal and navigate to the folder. Start the application with:
 
@@ -26,11 +26,9 @@ At the bottom of the screen, in large, the current item in the setlist is shown,
 ## Configuring midi device
 The midi device is configured as follows. See the example below for an example (a Roland FA-08).
 
-The first line selects the *midi device*. The midi device is configured by name, which can be found by pressing D, which lists all the devices available in the system. The name is put on the first line of the config.ini file.
-
-The second line is reserved for the navigation *pedal command* which is configured to a control change message, i.e. the channel, control change and value. These three are put, comma-separated, in this order. By pressing the navigation pedal, the setlist progresses one step. This means, no interaction with the computer is necessary during live performance.
-
-From the third line *midi message shortcuts* are configured, according to Shortcut,Midicode,InverseShortcut. First the shortcut, that is the shortcut used in your setlist, the System Exclusive Message formatted in 7bit bytes, and the inverse command shortcut to undo the change, if that is available. Here are two commands listed, the first enabling patch 1 and the second disabling patch 1. These are each others inverse commands, so the third element of +1 contains -1 and vice versa. 
+1. The first line selects the *midi device*. The midi device is configured by name, which can be found by pressing D, which lists all the devices available in the system. The name is put on the first line of the config.ini file.
+2. The second line is reserved for the navigation *pedal command* which is configured to a control change message, i.e. the channel, control change and value. These three are put, comma-separated, in this order. By pressing the navigation pedal, the setlist progresses one step. This means, no interaction with the computer is necessary during live performance.
+3. From the third line *midi message shortcuts* are configured, according to Shortcut,Midicode,InverseShortcut. First the shortcut, that is the shortcut used in your setlist, the System Exclusive Message formatted in 7bit bytes, and the inverse command shortcut to undo the change, if that is available. Here are two commands listed, the first enabling patch 1 and the second disabling patch 1. These are each others inverse commands, so the third element of +1 contains -1 and vice versa. 
 
 **Example config.ini:**
 
@@ -49,13 +47,10 @@ The midi code can be found quite easily in the application. Press I to enable th
 ## Making or modyfing a setlist
 A setlist starts with a name on the first line for your own reference (see also the example below). Afterwards, each line has the same format, seperated with commas: Songname,Measure,Preset,Incremental changes
 
-The *songname* needs only to be presented when it starts, the application copies it over until it changes.
-
-The *measure* is purely for the user, to indicate where this setlist item is activated.
-
-The *preset* switches a preset that is self-contained, that is, you can switch from any position to another preset and no history of other codes matter. When there is a preset, no incremental changes are read. The rest of the line is reserved for listing the patch sounds that are configured in this preset. This enables the applicaiton to display the current sounds also when incremental changes are made later. In my example, 15 sounds can be configured the 16th channel is reserved for the navigation pedal.
-
-The *incremental changes* are a comma-separated list of changes within the current preset. Each change is sent seperately to the midi device. When moving up and down the setlist within a preset, incremental changes (or their reverse) are executed, and the preset is not reset.
+* The *songname* needs only to be presented when it starts, the application copies it over until it changes.
+* The *measure* is purely for the user, to indicate where this setlist item is activated.
+* The *preset* switches a preset that is self-contained, that is, you can switch from any position to another preset and no history of other codes matter. When there is a preset, no incremental changes are read. The rest of the line is reserved for listing the patch sounds that are configured in this preset. This enables the applicaiton to display the current sounds also when incremental changes are made later. In my example, 15 sounds can be configured the 16th channel is reserved for the navigation pedal.
+* The *incremental changes* are a comma-separated list of changes within the current preset. Each change is sent seperately to the midi device. When moving up and down the setlist within a preset, incremental changes (or their reverse) are executed, and the preset is not reset.
 
 This implies that the preset shortcuts (in the example below 1, 12, 17), and the incremental change shortcuts (all the + and - codes) are midi codes configured for the midi device in config.ini. If codes are not configured, for instance because of a typo in the setlist, an error message is shown.
 
@@ -72,8 +67,7 @@ Bohemienne,,17,Strs,,SftStrgs,,Warm pd L,Warm pd,Harpsichord,Harp,Folk harp,,Dul
 ,37,,+9,-5,-14,-15
 ```
 
-## TODO and bugs
+## To do list and known issues
 
-Start the application with a commandline (terminal, from a batch file), otherwise the DumpReceiver doesn't work. 
-
-The conversion from Hex midi codes to 7bit decimal bytes should be done in the application and allows to enter hex midi codes too.
+* Start the application with a commandline (terminal, from a batch file), otherwise the DumpReceiver doesn't work. 
+* The conversion from Hex midi codes to 7bit decimal bytes should be done in the application and allows to enter hex midi codes too.
