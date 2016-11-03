@@ -3,6 +3,8 @@ The MidiSetListController enables quick but sophisticated setlists with elements
 
 The controller is developed in order to be very quick in making and modifying rather complicated setlists and maintain a stable setting for live performances. 
 
+![screenshot](https://github.com/ejlchappin/MidiSetlistController/raw/master/MidiSetlistController.png)
+
 # Install
 Save the application to disk: https://github.com/ejlchappin/MidiSetlistController/raw/master/MidiSetlistController.jar 
 
@@ -45,7 +47,7 @@ FA-06 08
 Specifying inverse commands makes it possible to move up the setlist within particular presets, by reversing the incremental changes that were done. For instance going up to re-enable patch 1, that was disabled when going down. This makes navigation easier and more fail-safe.
 
 # Finding your midi codes
-The midi code can be found quite easily in the application. Press I to enable the midi receiver printing it's output to the screen. If you now play notes/send midi messages you want with your device, you will see the result. Copy the correct system exclusive message over, and translate the Hex code to a 7bit decimal version in this webpage http://mididesigner.com/help/midi-byte-calculator/ (enter the code under Bytes to values, and find the right code in the individually listed decimal numbers under Result). On the TODO list is to do the conversion in the application and allow a Hex midi code directly.
+The midi code can be found quite easily in the application. Press I to enable the midi receiver printing it's output to the screen. If you now play notes/send midi messages you want with your device, you will see the result. Copy the correct system exclusive message over, and translate the Hex code to a 7bit decimal version in this webpage http://mididesigner.com/help/midi-byte-calculator/ (enter the code under Bytes to values, and find the right code in the individually listed decimal numbers under Result).
 
 # Making or modyfing a setlist
 A setlist starts with a name on the first line for your own reference (see also the example below). Afterwards, each line has the same format, seperated with commas: Songname,Measure,Preset,Incremental changes
@@ -79,3 +81,11 @@ Song of Purple Summer,,12,Strs,SmallStrs,SmallStrs R,SmallStrss R 8ve lower,Full
 Bohemienne,,17,Strs,,SftStrgs,,Warm pd L,Warm pd,Harpsichord,Harp,Folk harp,,Dulcimer,,Glock R soft,Glock R,Silent strs R
 
 ,37,,+9,-5,-14,-15
+
+# TODO and bugs
+
+Start the application with a commandline (terminal, from a batch file), otherwise the DumpReceiver doesn't work. 
+
+The conversion from Hex midi codes to 7bit decimal bytes should be done in the application and allows to enter hex midi codes too.
+
+
