@@ -12,7 +12,8 @@ The controller is developed in order to be very quick in making and modifying ra
 
 The configuration (and setlist) needs to be adjusted for your own midi device (see below). Start a command-line/terminal and navigate to the folder. Start the application with:
 
-```java -jar MidiSetlistController.jar
+```
+java -jar MidiSetlistController.jar
 ```
 
 ## Using the MidiSetlistController
@@ -33,13 +34,12 @@ From the third line *midi message shortcuts* are configured, according to Shortc
 
 **Example config.ini:**
 
+```
 FA-06 08
-
 16,9,127
-
 +1,240 65 16 0 0 119 18 24 0 64 2 1 37 247,-1
-
 -1,240 65 16 0 0 119 18 24 0 64 2 0 38 247,+1
+```
 
 Specifying inverse commands makes it possible to move up the setlist within particular presets, by reversing the incremental changes that were done. For instance going up to re-enable patch 1, that was disabled when going down. This makes navigation easier and more fail-safe.
 
@@ -60,24 +60,17 @@ The *incremental changes* are a comma-separated list of changes within the curre
 This implies that the preset shortcuts (in the example below 1, 12, 17), and the incremental change shortcuts (all the + and - codes) are midi codes configured for the midi device in config.ini. If codes are not configured, for instance because of a typo in the setlist, an error message is shown.
 
 **Example setlist.ini:**
-
+```
 Prestige 2016
-
 Basic,,1,
-
 Song of Purple Summer,,12,Strs,SmallStrs,SmallStrs R,SmallStrss R 8ve lower,Fullstrs R 8ve lower,Harp L
-
 ,16,,+3,+4,+6,-2
-
 ,20,,+1,-3,-4,-6
-
 ,35,,+5
-
 ,43,,-5
-
 Bohemienne,,17,Strs,,SftStrgs,,Warm pd L,Warm pd,Harpsichord,Harp,Folk harp,,Dulcimer,,Glock R soft,Glock R,Silent strs R
-
 ,37,,+9,-5,-14,-15
+```
 
 ## TODO and bugs
 
