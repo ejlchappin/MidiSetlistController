@@ -1,7 +1,7 @@
 # Introduction
-The MidiSetListController enables quick but sophisticated setlists with elements that sends particular midi messages to synthesizers or other midi devices, for live performances or studio usages, with intuitive navigation features. A key feature is that the setlist can easily shift between presets, but also by modifying the preset on the fly, for instance enable or disable layered sounds. 
+The MidiSetListController enables quick but sophisticated setlists with elements that sends particular midi messages to synthesizers or other midi devices, for live performances or studio usages, with intuitive navigation features. A key feature is that the setlist can easily shift between presets, but also by modifying the preset on the fly, for instance enable or disable layered sounds. The setlist can also be navigated by a midi pedal that sends a particular control change message.
 
-The controller is developed to make you spend a bit of time to configure the device, but if that is done, be very quick in making and modifying your setlists and having a stable setting for live performance.
+The controller is developed in order to be very quick in making and modifying rather complicated setlists and maintain a stable setting for live performances. 
 
 # Install
 Save the application to disk: https://github.com/ejlchappin/MidiSetlistController/raw/master/MidiSetlistController.jar 
@@ -25,7 +25,7 @@ The midi device is configured as follows. See the example below for an example (
 
 The first line selects the *midi device*. The midi device is configured by name, which can be found by pressing D, which lists all the devices available in the system. The name is put on the first line of the config.ini file.
 
-The second line is reserved for the *pedal command* which is configured to a control change message, i.e. the channel, control change and value. These three are put, comma-separated, in this order.
+The second line is reserved for the navigation *pedal command* which is configured to a control change message, i.e. the channel, control change and value. These three are put, comma-separated, in this order. By pressing the navigation pedal, the setlist progresses one step. This means, no interaction with the computer is necessary during live performance.
 
 From the third line *midi message shortcuts* are configured, according to Shortcut,Midicode,InverseShortcut. First the shortcut, that is the shortcut used in your setlist, the System Exclusive Message formatted in 7bit bytes, and the inverse command shortcut to undo the change, if that is available. Here are two commands listed, the first enabling patch 1 and the second disabling patch 1. These are each others inverse commands, so the third element of +1 contains -1 and vice versa. 
 
@@ -51,7 +51,7 @@ The *songname* needs only to be presented when it starts, the application copies
 
 The *measure* is purely for the user, to indicate where this setlist item is activated.
 
-The *preset* switches a preset that is self-contained, that is, you can switch from any position to another preset and no history of other codes matter.
+The *preset* switches a preset that is self-contained, that is, you can switch from any position to another preset and no history of other codes matter. When there is a preset, no incremental changes are read. The rest of the line is reserved for listing the patch sounds that are configured in this preset. This enables the applicaiton to display the current sounds also when incremental changes are made later. In my example, 15 sounds can be configured the 16th channel is reserved for the navigation pedal.
 
 The *incremental changes* are a comma-separated list of changes within the current preset. Each change is sent seperately to the midi device. When moving up and down the setlist within a preset, incremental changes (or their reverse) are executed, and the preset is not reset.
 
