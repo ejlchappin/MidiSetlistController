@@ -35,6 +35,8 @@ package midisetlistcontroller;
  */
 
 import	java.io.PrintStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import	javax.sound.midi.MidiMessage;
 import	javax.sound.midi.ShortMessage;
@@ -125,7 +127,8 @@ public class DumpReceiver
 
 
 	public void close()
-	{
+    	{
+         
 	}
 
 

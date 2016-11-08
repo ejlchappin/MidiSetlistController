@@ -1,6 +1,8 @@
 package midisetlistcontroller;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Desktop;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -21,11 +23,14 @@ import javax.sound.midi.Receiver;
 import javax.sound.midi.ShortMessage;
 import javax.sound.midi.SysexMessage;
 import javax.sound.midi.Transmitter;
-import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import static midisetlistcontroller.MidiSetlistController.newline;
@@ -58,6 +63,10 @@ public class MidiSetlistController extends JFrame
     MidiSetlistController frame = null;
     MidiDevice device = null;
     MidiDevice deviceToListen = null;
+    MidiListener listenerThread = null;
+    boolean listenerShouldBeReopened = false;
+    Receiver receiver = null;
+    boolean checkMidiDeviceAvailable = true;
     HashMap<String, String> midiCodesMap = new HashMap<String, String>();
     HashMap<String, String> midiCodesOpposits = new HashMap<String, String>();
     ArrayList<SetlistItem> setlist = new ArrayList<SetlistItem>();
@@ -65,14 +74,16 @@ public class MidiSetlistController extends JFrame
     JTextArea displayAreaCurrent;
     final JFileChooser fc = new JFileChooser();
     static final String newline = System.getProperty("line.separator");
-    int currentSetListIndex = -1;
+    int currentSetListIndex = 0;
     int numberFromKeys = 0;
-    String configFilename = System.getProperty("user.dir") + "/config.ini";//default filename
-    String setlistFilename = System.getProperty("user.dir") + "/setlist.ini";//default filename
+    String configFilename = System.getProperty("user.dir") + "/midi.txt";//default filename
+    String setlistFilename = System.getProperty("user.dir") + "/setlist.txt";//default filename
     int pedalChannel;
     int pedalControlChange;
     int pedalValue;
     boolean printMidiReceived = false;
+    int largeFontSize = 38;
+    int smallFontSize = 16;
 
     /**
      * @param args the command line arguments
@@ -129,24 +140,172 @@ public class MidiSetlistController extends JFrame
         frame.pack();
         frame.setVisible(true);
 
-        MidiListener thread = new MidiListener(frame);
-        thread.setDaemon(true);
-        thread.start();
+        frame.createListenerThread();
+    }
 
+    public void createListenerThread() {
+        boolean existing = false;
+        if (listenerThread != null) {
+            if (listenerThread.isAlive()) {
+                existing = true;
+                writeLine("Not creating a listener, it exists");
+            }
+        }
+        if (!existing) {
+            MidiListener thread = new MidiListener(frame);
+            thread.midicontroller = this;
+            this.listenerThread = thread;
+            thread.setDaemon(true);
+            thread.start();
+        }
     }
 
     // Add stuff and listeners to the GUI
     private void addComponentsToPane() {
 
-        //Add button
-        JButton button = new JButton("Load config and setlist");
-        button.addActionListener(this); //listen to a button click.
-        button.addKeyListener(this); //even if the button is selected, keys can be pressed.
+        //Create the menu bar.
+        JMenuBar menuBar = new JMenuBar();
+
+        //Build the menu.
+        JMenu menuMidi = new JMenu("Midi");
+        menuMidi.setMnemonic(KeyEvent.VK_M);
+        menuBar.add(menuMidi);
+
+        JMenu menuSetlist = new JMenu("Setlist");
+        menuSetlist.setMnemonic(KeyEvent.VK_S);
+        menuBar.add(menuSetlist);
+
+        JMenu menuDisplay = new JMenu("Display");
+        menuDisplay.setMnemonic(KeyEvent.VK_D);
+        menuBar.add(menuDisplay);
+
+        //Midi menu items
+        JMenuItem menuItem = new JMenuItem("Select midi config file", KeyEvent.VK_S);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuMidi.add(menuItem);
+
+        //a group of JMenuItems
+        menuItem = new JMenuItem("Edit midi config", KeyEvent.VK_E);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuMidi.add(menuItem);
+
+        menuItem = new JMenuItem("Reload midi config", KeyEvent.VK_R);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuMidi.add(menuItem);
+
+        menuMidi.addSeparator();
+
+        menuItem = new JMenuItem("List midi devices", KeyEvent.VK_D);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuMidi.add(menuItem);
+
+        menuItem = new JMenuItem("Open midi device", KeyEvent.VK_O);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuMidi.add(menuItem);
+
+        menuItem = new JMenuItem("Close midi device", KeyEvent.VK_C);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuMidi.add(menuItem);
+
+        menuMidi.addSeparator();
+
+        menuItem = new JMenuItem("List midi shortcuts available", KeyEvent.VK_L);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_K, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuMidi.add(menuItem);
+
+        menuItem = new JMenuItem("List midi shortcuts with codes", KeyEvent.VK_H);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_J, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuMidi.add(menuItem);
+
+        menuMidi.addSeparator();
+
+        menuItem = new JMenuItem("Send midi test note", KeyEvent.VK_T);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuMidi.add(menuItem);
+
+        menuItem = new JMenuItem("Toggle midi check while sending", KeyEvent.VK_M);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_U, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuMidi.add(menuItem);
+
+        //Setlist menu items
+        menuItem = new JMenuItem("Select setlist file", KeyEvent.VK_S);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuSetlist.add(menuItem);
+
+        menuItem = new JMenuItem("Reload setlist", KeyEvent.VK_R);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuSetlist.add(menuItem);
+
+        menuItem = new JMenuItem("Edit setlist", KeyEvent.VK_E);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuSetlist.add(menuItem);
+
+        menuSetlist.addSeparator();
+
+        menuItem = new JMenuItem("Display setlist", KeyEvent.VK_D);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuSetlist.add(menuItem);
+
+        //Display menu items
+        menuItem = new JMenuItem("Toggle incoming midi", KeyEvent.VK_M);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuDisplay.add(menuItem);
+
+        menuItem = new JMenuItem("Toggle colors", KeyEvent.VK_C);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuDisplay.add(menuItem);
+
+        menuDisplay.addSeparator();
+
+        menuItem = new JMenuItem("Increase font dashboard", KeyEvent.VK_D);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuDisplay.add(menuItem);
+
+        menuItem = new JMenuItem("Decrease font dashboard", KeyEvent.VK_F);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuDisplay.add(menuItem);
+
+        menuItem = new JMenuItem("Increase font main display", KeyEvent.VK_I);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_CLOSE_BRACKET, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuDisplay.add(menuItem);
+
+        menuItem = new JMenuItem("Decrease font main display", KeyEvent.VK_O);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_OPEN_BRACKET, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuDisplay.add(menuItem);
+
+        menuDisplay.addSeparator();
+
+        menuItem = new JMenuItem("Clear screen", KeyEvent.VK_S);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuDisplay.add(menuItem);
+
+        this.setJMenuBar(menuBar);
 
         //Add display area
         displayArea = new JTextArea();
         displayArea.setEditable(false);
-        displayArea.setFont(new java.awt.Font("Arial", 0, 16));
+
         //displayArea.setTabSize(8);
         displayArea.setLineWrap(true);
         displayArea.addKeyListener(this); //if keys are pressed when the display area is in focus.
@@ -155,36 +314,88 @@ public class MidiSetlistController extends JFrame
         //Add display area
         displayAreaCurrent = new JTextArea();
         displayAreaCurrent.setEditable(false);
-        displayAreaCurrent.setFont(new java.awt.Font("Arial", 0, 38));
         displayAreaCurrent.setLineWrap(false);
         displayAreaCurrent.setTabSize(6);
         displayAreaCurrent.addKeyListener(this); //if keys are pressed when the display area is in focus.
         JScrollPane scrollPaneCurrent = new JScrollPane(displayAreaCurrent);
         scrollPaneCurrent.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
+        updateFonts();
         //Place button and text area on the screen
-        getContentPane().add(button, BorderLayout.PAGE_START);
         getContentPane().add(scrollPane, BorderLayout.CENTER);
         getContentPane().add(scrollPaneCurrent, BorderLayout.PAGE_END);
 
-        //Write the menu options to the text area
+        //Startup!
         writeMenu();
         readMidiConfig();
         openMidiDevice();
         readSetlist();
+        runSetlistItemNumber(0);
         displayArea.requestFocusInWindow();
     }
 
-    // When button is clicked
     public void actionPerformed(ActionEvent e) {
+        JMenuItem source = (JMenuItem) (e.getSource());
+        String menuItem = source.getText();
 
-        //Read and process configuration.
-        readMidiConfig();
-        openMidiDevice();
-        readSetlist();
+        //Translate different menu options into differen actions:
+        if (menuItem.equals("Load midi config file")) {
+            if (chooseConfigFile()) {
+                readMidiConfig();
+                openMidiDevice();
+            }
+        } else if (menuItem.equals("Edit midi config")) {
+            editMidiConfig();
+        } else if (menuItem.equals("Reload midi config")) {
+            readMidiConfig();
+            openMidiDevice();
+        } else if (menuItem.equals("List midi devices")) {
+            listMidiDevices();
+        } else if (menuItem.equals("Open midi device")) {
+            openMidiDevice();
+        } else if (menuItem.equals("Close midi device")) {
+            closeMidiDevice();
+        } else if (menuItem.equals("List midi shortcuts available")) {
+            displayMidiCodesAvailable();
+        } else if (menuItem.equals("List midi shortcuts with codes")) {
+            displayMidiCodes();
+        } else if (menuItem.equals("Send midi test note")) {
+            testSendMessage();
+        } else if (menuItem.equals("Toggle midi check while sending")) {
+            checkMidiDeviceAvailable = !checkMidiDeviceAvailable;
+        } else if (menuItem.equals("Choose setlist file")) {
+            if (chooseSetlistFile()) {
+                readSetlist();
+            }
+        } else if (menuItem.equals("Edit setlist")) {
+            editSetlist();
+        } else if (menuItem.equals("Reload setlist")) {
+            readSetlist();
+        } else if (menuItem.equals("Display setlist")) {
+            displaySetlist();
+        } else if (menuItem.equals("Toggle colors")) {
+            toggleColors();
+        } else if (menuItem.equals("Toggle incoming midi")) {
+            togglePrintMidiReceived();
+        } else if (menuItem.equals("Clear screen")) {
+            clearTextArea();
+        } else if (menuItem.equals("Increase font dashboard")) {
+            increaseLargeFont();
+        } else if (menuItem.equals("Decrease font dashboard")) {
+            decreaseLargeFont();
+        } else if (menuItem.equals("Increase font main display")) {
+            increaseSmallFont();
+        } else if (menuItem.equals("Decrease font main display")) {
+            decreaseSmallFont();
+        }
+        displayArea.setCaretPosition(displayArea.getDocument().getLength());
+    }
 
-        //Return the focus to the typing area.
-        displayAreaCurrent.requestFocusInWindow();
+    // Returns just the class name -- no package info.
+    protected String getClassName(Object o) {
+        String classString = o.getClass().getName();
+        int dotIndex = classString.lastIndexOf(".");
+        return classString.substring(dotIndex + 1);
     }
 
     // When key is pressed
@@ -201,41 +412,7 @@ public class MidiSetlistController extends JFrame
             key = KeyEvent.getKeyText(keyCode);
         }
 
-        //Translate different keys to differen actions:
-        if (key.equals("A")) {
-            readMidiConfig();
-            openMidiDevice();
-        } else if (key.equals("C")) {
-            closeMidiDevice();
-        } else if (key.equals("D")) {
-            listMidiDevices();
-        } else if (key.equals("M")) {
-            writeMenu();
-        } else if (key.equals("O")) {
-            openMidiDevice();
-        } else if (key.equals("S")) {
-            readSetlist();
-        } else if (key.equals("L")) {
-            displaySetlist();
-        } else if (key.equals("U")) {
-            displayMidiCodes();
-        } else if (key.equals("Y")) {
-            displayMidiCodesAvailable();
-        } else if (key.equals("T")) {
-            testSendMessage();
-        } else if (key.equals("I")) {
-            togglePrintMidiReceived();
-        } else if (key.equals("X")) {
-            clearTextArea();
-        } else if (key.equals("F")) {
-            if (chooseConfigFile()) {
-                readMidiConfig();
-            }
-        } else if (key.equals("G")) {
-            if (chooseSetlistFile()) {
-                readSetlist();
-            }
-        } else if (key.equals("Up")) {
+        if (key.equals("Up")) {
             runSetlistPrevious();
         } else if (key.equals("Left")) {
             runSetlistPrevious();
@@ -266,12 +443,16 @@ public class MidiSetlistController extends JFrame
     ///////NAVIGATION////////////////
     // Goes to the beginning of the setlist
     public void runSetlistStart() {
-        runSetlistItemNumber(0);
+        if (currentSetListIndex != 0) {
+            runSetlistItemNumber(0);
+        }
     }
 
     // Goes to the end of the setlist
     public void runSetlistEnd() {
-        runSetlistItemNumber(setlist.size() - 1);
+        if (currentSetListIndex != setlist.size() - 1) {
+            runSetlistItemNumber(setlist.size() - 1);
+        }
     }
 
     // Goes to the the next setlist item
@@ -299,7 +480,9 @@ public class MidiSetlistController extends JFrame
                 previousPresetFound = true;
             }
         }
-        runSetlistItemNumber(previousPreset);
+        if (previousPresetFound == true) {
+            runSetlistItemNumber(previousPreset);
+        }
     }
 
     // Goes to the next preset
@@ -332,11 +515,6 @@ public class MidiSetlistController extends JFrame
 
     // Determine the strategy to go from the current set list index to a particular position and execute that strategy.
     public void runSetlistItemNumber(int goingTo) {
-
-        //Special case: when we start up, we start at -1.
-        if (currentSetListIndex == -1) {
-            currentSetListIndex = 0;
-        }
 
         int comingFrom = currentSetListIndex;
 
@@ -480,10 +658,6 @@ public class MidiSetlistController extends JFrame
                 + newline
                 + newline + "Navigation:\tUse arrow keys to navigate (up/left for the previous item, right/down/space or pedal for the next item), or type number and press enter for a particular item"
                 + newline + "\tUse Page up for previous preset, Page down for next preset, and press pedal for next item"
-                + newline + "Other options:\tF: Choose config file\tA: Re-apply config\tY: Display midicodes\tU: Display midicodes in detail"
-                + newline + "\tG: Choose setlist file\tS: Reload setlist\tL: Display setlist"
-                + newline + "\tD: List midi devices\tO: Open midi device\tC: Close midi device\tT: Test midi sound"
-                + newline + "\tM: Display this menu\tX: Clear screen\tI: Toggle display midi input\tButton: reload config and setlist"
                 + newline);
     }
 
@@ -495,6 +669,15 @@ public class MidiSetlistController extends JFrame
             return true;
         }
         return false;
+    }
+
+    public void editMidiConfig() {
+        Desktop dt = Desktop.getDesktop();
+        try {
+            dt.open(new File(configFilename));
+        } catch (IOException e) {
+            writeLine("Could not load editor for " + setlistFilename);
+        }
     }
 
     //Reads configuration file for midi device and codes
@@ -614,6 +797,15 @@ public class MidiSetlistController extends JFrame
         }
     }
 
+    public void editSetlist() {
+        Desktop dt = Desktop.getDesktop();
+        try {
+            dt.open(new File(setlistFilename));
+        } catch (IOException e) {
+            writeLine("Could not load editor for " + setlistFilename);
+        }
+    }
+
     //Writes out the setlist
     public void displaySetlist() {
         writeLine("Set list items:");
@@ -632,7 +824,6 @@ public class MidiSetlistController extends JFrame
                     MidiDevice thisDevice = MidiSystem.getMidiDevice(infos[i]);
                     int r = thisDevice.getMaxReceivers();
                     int t = thisDevice.getMaxTransmitters();
-                    writeLine("Found the midi device you configured, with " + r + " receivers and " + t + " transmitters");
                     if (t == 0) {
                         device = thisDevice;
                         found = true;
@@ -662,20 +853,18 @@ public class MidiSetlistController extends JFrame
 
     //Opens the currently selected midi device.
     public void openMidiDevice() {
-        writeLine("Opening configured midi device");
         if (device == null) {
             writeLine("No device selected yet");
-        } else if (!(device.isOpen())) {
+        } else {
             try {
+                device.close();
                 device.open();
-                writeLine("Device is now opened");
+                writeLine("Midi sender is now opened");
             } catch (MidiUnavailableException e) {
-                e.printStackTrace();
                 writeLine("Error 3, opening device exclusively.");
             }
-        } else {
-            writeLine("Device was already opened");
         }
+        listenerShouldBeReopened = true;
     }
 
     //Closes the currently selected midi device.
@@ -726,7 +915,59 @@ public class MidiSetlistController extends JFrame
         displayArea.setText("");
     }
 
+    public void toggleColors() {
+
+        if (displayArea.getBackground().equals(Color.WHITE)) {
+            displayArea.setBackground(Color.BLACK);
+            displayAreaCurrent.setBackground(Color.BLACK);
+            displayArea.setForeground(Color.WHITE);
+            displayAreaCurrent.setForeground(Color.WHITE);
+        } else {
+            displayArea.setBackground(Color.WHITE);
+            displayAreaCurrent.setBackground(Color.WHITE);
+            displayArea.setForeground(Color.BLACK);
+            displayAreaCurrent.setForeground(Color.BLACK);
+        }
+    }
+
+    public void increaseLargeFont() {
+        largeFontSize++;
+        updateFonts();
+    }
+
+    public void increaseSmallFont() {
+        smallFontSize++;
+        updateFonts();
+    }
+
+    public void decreaseLargeFont() {
+        largeFontSize--;
+        updateFonts();
+    }
+
+    public void decreaseSmallFont() {
+        smallFontSize--;
+        updateFonts();
+    }
+
+    public void updateFonts() {
+        displayArea.setFont(new java.awt.Font("Arial", 0, smallFontSize));
+        displayAreaCurrent.setFont(new java.awt.Font("Arial", 0, largeFontSize));
+    }
+
     public void sendMessage(String messageBody) {
+        
+        // Check whether the midi device is there
+        if (checkMidiDeviceAvailable) {
+            try {
+                MidiSystem.getMidiDevice(device.getDeviceInfo());
+            } catch (Exception e) {
+                writeLine("Midi device seems unavailable, will try to reload. Use CTRL-W to try again or CTRL-U to suppress.");
+                readMidiConfig();
+                openMidiDevice();
+            }
+        }
+
         SysexMessage sysmsg = new SysexMessage();
         try {
             byte[] messageData = byteStringToByteArray(messageBody);
@@ -740,7 +981,7 @@ public class MidiSetlistController extends JFrame
             Receiver rcvr = device.getReceiver();
             rcvr.send(sysmsg, timeStamp);
         } catch (Exception e) {
-            //writeLine("Error 6e: no midi device selected"); don't display this error...
+            writeLine("Error 6e: no midi device selected"); //don't display this error...
         }
     }
 
@@ -825,48 +1066,67 @@ public class MidiSetlistController extends JFrame
 
     // Configure the midi receiver
     public void listenToDevice() {
+
+        // Wait until the display is setup
         while (displayArea == null) {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                writeLine("Waiting");
             }
         }
+
+        // Wait until deviceToListen is set
+        if (deviceToListen != null) {
+
+            //Open the listenerdevice. 
+            openDeviceToListen();
+            listenerShouldBeReopened = false;
+
+            //Listener is now enabled. Wait until it needs reopening (after reloading midi config)
+            while (!listenerShouldBeReopened) {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    writeLine("Listener error 5");
+                }
+            }
+
+            //Device needs to be reopened.
+            deviceToListen.close();
+        } else {
+            // Wait
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                writeLine("Listener error 5");
+            }
+        }
+    }
+
+    public void openDeviceToListen() {
         // Skip if the deviceToListen is not set yet.
         if (deviceToListen != null) {
-            writeLine("Midi device to listen to is set");
+//            writeLine("Midi device to listen to is set");
             try {
                 deviceToListen.open();
-                writeLine("Midi device to listen to is opened");
+                writeLine("Midi listener is opened");
             } catch (MidiUnavailableException ex) {
                 writeLine("Midi device to listen to couldn't be opened");
             }
-            Receiver r = new DumpReceiver(System.out, this);
+            receiver = new DumpReceiver(System.out, this);
             try {
                 Transmitter t = deviceToListen.getTransmitter();
-                t.setReceiver(r);
+                t.setReceiver(receiver);
             } catch (MidiUnavailableException e) {
                 writeLine("Error receiver 1");
             }
 
             try {
                 Transmitter t = deviceToListen.getTransmitter();
-                t.setReceiver(r);
+                t.setReceiver(receiver);
             } catch (MidiUnavailableException e) {
                 writeLine("Error receiver 2");
-            }
-
-            try {
-                //TODO this doesn't work without a command line, somehow. Can we make it work when the jar file just runs?
-                System.in.read();
-            } catch (IOException ioe) {
-                writeLine("Error receiver 3");
-            }
-            deviceToListen.close();
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
             }
         }
     }
@@ -886,7 +1146,7 @@ public class MidiSetlistController extends JFrame
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    midicontroller.displayArea.append("Error listening!");
                 }
             }
         }

@@ -103,13 +103,16 @@ public class SetlistItem {
                     int patchChanged = Integer.parseInt(code.substring(1)) - 1;
                     if (getSounds() != null) {
                         if(getSounds().length > patchChanged){
-                            sounds = sounds.concat("\t" + getSounds()[patchChanged]);
+                            sounds = sounds.concat("  " + getSounds()[patchChanged]);
                         }
                     }
                 }
             }
         }
-        return sounds;
+        if (sounds != ""){
+            return "\t" + sounds;
+        }
+        return "";
     }
 
     public String getStudiosetWritten() {
@@ -127,6 +130,6 @@ public class SetlistItem {
     }
 
     public String toString() {
-        return getSongName() + getMeasureWritten() + getStudiosetWritten() + getMidiCodesWritten() + getSoundNamesAdded() + "\t";
+        return getSongName() + getMeasureWritten() + getStudiosetWritten() + getMidiCodesWritten() + getSoundNamesAdded();
     }
 }
