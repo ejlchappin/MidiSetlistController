@@ -7,30 +7,26 @@ The controller is developed in order to be very quick in making and modifying ra
 
 ## Install
 * Save the [application](https://github.com/ejlchappin/MidiSetlistController/raw/master/MidiSetlistController.jar) to disk
-* Save the [midi configuration](https://raw.githubusercontent.com/ejlchappin/MidiSetlistController/master/config.ini) to disk
-* Save the [setlist](https://raw.githubusercontent.com/ejlchappin/MidiSetlistController/master/setlist.ini) to disk
+* Save the [midi configuration](https://raw.githubusercontent.com/ejlchappin/MidiSetlistController/master/midi.txt) to disk
+* Save the [setlist](https://raw.githubusercontent.com/ejlchappin/MidiSetlistController/master/setlist.txt) to disk
 
-The configuration (and setlist) needs to be adjusted for your own midi device (see below). Start a command-line/terminal and navigate to the folder. Start the application with:
-
-```
-java -jar MidiSetlistController.jar
-```
+The configuration (and setlist) needs to be adjusted for your own midi device (see below). Start the application by double clicking the jar file. If that doesn't work, the Java path should be configured properly on your device. 
 
 ## Using the MidiSetlistController
-The applicaton opens with the menu, which can always be recalled by pressing M. If the config.ini and setlist.ini files are present in the same folder they are loaded. Otherwise use the key F to load a config file and G to load a setlist file. The application attempts to reach the configured midi device and will show you the result. 
+The applicaton opens by loading the midi configuration, the setlist if the files are present in the same folder. Otherwise use the menu items to load a midi config file (CTRL-Q) and a setlist file (CTRL-S). The application attempts to reach the configured midi device and will show you the result. If all works out, the first setlist item is executed.
 
 When a setlist is loaded, you can navigate the setlist. With the arrow keys you move individual settings and page-up and page-down make you move between complete presets. The logic takes care of performing the correct incremental changes, for instance when moving up.
 
-At the bottom of the screen, in large, the current item in the setlist is shown, for a clear view during live performances.
+At the bottom of the screen, in large, the current item in the setlist is shown, for a clear view during live performances. For during dark performances, a night colour scheme can be used by CTRL-N. Font sizes can be increased and decreased as well.
 
 ## Configuring midi device
 The midi device is configured as follows. See the example below for an example (a Roland FA-08).
 
-1. The first line selects the *midi device*. The midi device is configured by name, which can be found by pressing D, which lists all the devices available in the system. The name is put on the first line of the config.ini file.
+1. The first line selects the *midi device*. The midi device is configured by name, which can be found by pressing CTRL-D, which lists all the devices available in the system. The name is put on the first line of the config.ini file.
 2. The second line is reserved for the navigation *pedal command* which is configured to a control change message, i.e. the channel, control change and value. These three are put, comma-separated, in this order. By pressing the navigation pedal, the setlist progresses one step. This means, no interaction with the computer is necessary during live performance.
 3. From the third line *midi message shortcuts* are configured, according to Shortcut,Midicode,InverseShortcut. First the shortcut, that is the shortcut used in your setlist, the System Exclusive Message formatted in 7bit bytes, and the inverse command shortcut to undo the change, if that is available. Here are two commands listed, the first enabling patch 1 and the second disabling patch 1. These are each others inverse commands, so the third element of +1 contains -1 and vice versa. 
 
-**Example config.ini:**
+**Example midi.txt:**
 
 ```
 FA-06 08
@@ -42,7 +38,7 @@ FA-06 08
 Specifying inverse commands makes it possible to move up the setlist within particular presets, by reversing the incremental changes that were done. For instance going up to re-enable patch 1, that was disabled when going down. This makes navigation easier and more fail-safe.
 
 ## Finding your midi codes
-The midi code can be found quite easily in the application. Press I to enable the midi receiver printing it's output to the screen. If you now play notes/send midi messages you want with your device, you will see the result. Copy the correct system exclusive message over, and translate the Hex code to a 7bit decimal version in this webpage http://mididesigner.com/help/midi-byte-calculator/ (enter the code under Bytes to values, and find the right code in the individually listed decimal numbers under Result).
+The midi code can be found quite easily in the application. Press CTRL-M to enable the midi receiver printing it's output to the screen. If you now play notes/send midi messages you want with your device, you will see the result. Copy the correct system exclusive message over, and translate the Hex code to a 7bit decimal version in this webpage http://mididesigner.com/help/midi-byte-calculator/ (enter the code under Bytes to values, and find the right code in the individually listed decimal numbers under Result).
 
 ## Making or modyfing a setlist
 A setlist starts with a name on the first line for your own reference (see also the example below). Afterwards, each line has the same format, seperated with commas: Songname,Measure,Preset,Incremental changes
@@ -54,7 +50,7 @@ A setlist starts with a name on the first line for your own reference (see also 
 
 This implies that the preset shortcuts (in the example below 1, 12, 17), and the incremental change shortcuts (all the + and - codes) are midi codes configured for the midi device in config.ini. If codes are not configured, for instance because of a typo in the setlist, an error message is shown.
 
-**Example setlist.ini:**
+**Example setlist.txt:**
 ```
 Prestige 2016
 Basic,,1,
@@ -68,6 +64,4 @@ Bohemienne,,17,Strs,,SftStrgs,,Warm pd L,Warm pd,Harpsichord,Harp,Folk harp,,Dul
 ```
 
 ## To do list and known issues
-
-* Start the application with a commandline (terminal, from a batch file), otherwise the DumpReceiver doesn't work. 
 * The conversion from Hex midi codes to 7bit decimal bytes should be done in the application and allows to enter hex midi codes too.
