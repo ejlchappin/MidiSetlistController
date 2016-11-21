@@ -73,7 +73,7 @@ A setlist starts with a name on the first line for your own reference (see also 
 
 With a new preset: 
 ```
-Song name,Measure,Preset,Midicode,Sound names
+Song name,Measure,Preset,Midicode,Sound names (comma-separated)
 ```
 
 With an incremental change: 
