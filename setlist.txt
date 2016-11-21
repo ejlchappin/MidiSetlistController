@@ -1,101 +1,18 @@
 Prestige 2016
-Basic,,1,
-Cantate for a First Date,,14,Harpsichord R,Distorted E-Git R,Baritone L,PizzStrs,PizzStrs R,Harp,Strs R,Beep,Steel Drums R,Vibraphone,Bass guitar L,Warm pad L,Horns L,Glock R,Strs
-,28,,+4,-1,-2,-3
-,37,,+6,-4
-,41,,+7,-6
-,45,,+1,+2,+3,-7
-,46,,+4,-1,-2,-3
-,56,,+6,-4
-,58,,+8,-6
-,59,,+15,-8
-,81,,+3,+9,-15
-,97,,+1,+2,-3,-9
-,99,,+10,+11,-1,-2
-,103,,+7,-10
-,107,,+5,-7
-,112,,+12,-11
-,120,,+13,+11,-12,-5
-,128,,+5,-11,-13
-,136,,+14,+3,-5
-Bohemienne,,17,Strs,,SftStrgs,,Warm pd L,Warm pd,Harpsichord,Harp,Folk harp,,Dulcimer,,Glock R sft,Glock R,Silent strs R
-,37,,+9,-5,-14,-15
-,61,,+1,+6,-9
-,92,,+11,-1,-6
-,99,,+7,-11
-,100,,+11,-7
-,109,,+1,-11
-,126,,+2,+5,+12,p12,-1
-,159,,p16,+8,+13,-2,-5,-12
-Till we reach that day,,20,Strs,Strs L,MrcStrs,MrcStrs L,Flts,Flugel,Tuba,Heavy brs,Full brs R,Warm brs,,Honkey tonk,,,
-,12,,+5,+6,-2,-12
-,36,,+10,-5,-6
-,49,,+1,-10
-,53,,+3,-1
-,62,,+9
-,68,,+7,-3,-9
-,73,,+8,
-,87,,+1,+9,-8,-7
-Cell Block Tango de Roxanne,,11,MarcStrs,TrmStrs,TrmStrings L,MarcStrs R,Vibraphone,Honkey tonk,Honkey tonk R,Violin,Baritone sax L,Dulcimer 8vb R,,,,,MarcStrs 8vb,
-,18,,+1,-5
-,57,,+6,-1
-,65,,+8,-6
-,75,,+7,+9,-8
-,81,,+10,+3,-7,-9
-,103,,+7,+9,-3,-10
-,109,,+4,-7
-,110,,+7,-4
-,112,,+4,-7
-,116,,+1,+15,-4,-9
-Madame Guillotine,,7,Strs,Strs L,Strs R,,Church bell R,Dark pd L,Harpsichord,Clar/flt R,Horns R,Brs L,Harpsichord L
-,16,,+1,-5,-6
-,20,,+11,+8,-1
-,26,,+2,+3,-8,-11
-,44,,+9,-3
-,46,,+3,-9
-,50,,+7,-2,-3
-,57,,+1,-7
-,85,,+4,+10,-1
-That Man My Girl,,13,Honkey Tonk,Honkey Tonk R, Baritone L,Bright brass,Bright brass R,Bass guitar L,Vibraphone R, Warm pad R,Strs R,Warm pad,Harp,Strs
-,9,,+2,+3,-1
-,14,,+1,-2,-3
-,35,,+4,-1
-,36,,+5,+3,-4
-,37,,+2,-5
-,52,,+1,-2,-3
-,60,,+6,+7,+10,-1
-,76,,+9,-10
-,84,,+2,+3,-9,-6,-7
-,98,,+6,-3
-,102,,+3,-6,-4
-,117,,+4,-3
-,118,,+5,+3,-4
-,119,,+2,-5
-,134,,+8,+12,-2,-3
-,146,,+10,+11,-8
-,154,,+2,+3,-10,-11,-12
-,163,,+5,-2
-Mini Miz,,10,Strs,Strs L,SftStrgs,TrmStrs,Tubular bells L,Warm pd,Harpsichord,Harp,Harp R,Warm brs,Hns/trb,Honkey tonk,Glock R,W-winds,Silent strs R
-,13,,+7,-1
-,17,,+1,-7
-,21,,+3,-1
-,25,,+1,+7,-3
-,31,,+8,-1,-7
-,34,,+3
-,38,,+15,-3
-,43,,+3,+10,-8,-15
-,50,,+7,-3,-10
-,54,,+12,-7
-,56,,+3,-12
-,70,,+10,+11,-3
-,75,,+6,-10,-11
-,77,,+8,-6
-,84,,+1,-8
-,96,,+2,+9,-1
-,99,,+8,-2,-9
-,102,,+4,-8
-,103,,+8,-4
-,108,,+4,-8
-,114,,+3,-4
-,118,,+5,+13,-3
-,124,,+3,+14,-5,-13
+Basic,,1
+;Song name,Measure,Preset,Midicode,Sound names
+My favorite song,,2,Sound name 1,Sound name 2,Sound name3,Sound name 4
+;Song name,Measure,empty,Midicodes
+,28,,+2,-1
+,49,,+3,+4
+,50,,-2
+My next song,,2,Sound name 5,Sound name 6,Sound name 7,Sound name 8
+,30,,+1,+2,+3,+4
+,50,,CC-1-11-64
+,51,,CC-1-11-30
+,70,,PC-1-0-0
+,71,,PC-1-1-0
+,72,,PC-1-2-0
+,73,,PC-1-3-0
+,74,,PC-1-4-0
+,75,,PC-1-5-0
