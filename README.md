@@ -66,10 +66,10 @@ Trigger,Down,CC,16-9-127
 Specifying inverse commands makes it possible to move up the setlist within particular presets, by reversing the incremental changes that were done. For instance going up to re-enable patch 1, that was disabled when going down. This makes navigation easier and more fail-safe.
 
 ## Finding your midi codes
-The midi code can be found quite easily in the application. Press CTRL-M to enable the midi receiver printing it's output to the screen. If you now play notes/send midi messages you want with your device, you will see the result. Copy the correct system exclusive message over, and translate the Hex code to a 7bit decimal version in this webpage http://mididesigner.com/help/midi-byte-calculator/ (enter the code under Bytes to values, and find the right code in the individually listed decimal numbers under Result).
+The midi code can be found quite easily in the application. When the device is properly connected, press CTRL-M to enable a display of the incoming midi on the screen. If you now play notes/send midi messages you want with your device, you will see the code/preset that can be used to send the same command. Type the correct messages over (or use the log feature).
 
 ## Making or modyfing a setlist
-A setlist starts with a name on the first line for your own reference (see also the example below). Afterwards, lines can have to formats, one for presets and one for incremental changes. The format is comma-separated. 
+A setlist starts with a name on the first line for your own reference (see also the example below). Afterwards, lines can have to formats, one for presets and one for incremental changes. The format is comma-separated. When making a change to the setlist on disk, just press CTRL-R to reload the setlist.
 
 With a new preset: Song name,Measure,Preset,Midicode,Sound names
 
