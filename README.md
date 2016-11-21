@@ -22,8 +22,12 @@ At the bottom of the screen, in large, the current item in the setlist is shown,
 ## Configuring midi device
 The midi device is configured as follows. See the example below for an example (a Roland FA-08).
 
-* A line of the form Device,DeviceName (first the word Device, a comma, and then the actual device name) configures the *midi device*. The midi device is configured by name, which can be found by pressing CTRL-D, which lists all the devices available in the system.
-* Midi triggers are configured to trigger changes. This means, no interaction with the computer is necessary during live performance. In the example below, a pedal is configured in my synth to send a midi control change message 9 on channel 16 with value 127 and it executes a Down arrow key, which progresses the setlist. Triggers have the following two forms. The key refers to the action that is executed when triggered. Options are Up, Down, Pageup, Pagedown, Home, End.
+* A line of the form with the word Device, a comma, and then the actual device name) configures the *midi device*. The midi device is configured by name, which can be found by pressing CTRL-D, which lists all the devices available in the system. This is the format to configure a device:
+```
+Device,DeviceName
+```
+* In order to find out how to configure the other parts, simply configure the device name and connect the device. Then press CTRL-M to enable displaying all incoming midi. When pressing notes or changing a presets, the proper messages will be displayed so the commands for midi shortcuts and midi triggers can be easily taken over to the midi configuration and setlist. In case there are long commands, the display can saved to a log (in the file log.txt in the current folder). 
+* Midi triggers are configured that the application listens for to trigger changes to the device. This means, no interaction with the computer is necessary during live performance. In the example below, I configured my synth to send a midi control change message 9 on channel 16 with value 127 when I press a pedal. The trigger configures the application to listen to this exact message and executes a Down arrow key, which progresses the setlist. Triggers have the following two forms. The Key refers to the action that is executed when triggered. Options are Up, Down, Pageup, Pagedown, Home and End.
 
 For program and control change messages, type is 'PC' or 'CC', respectively:
 ```
@@ -35,7 +39,11 @@ For configured midi codes, type 'MC' or system exclusive hex code, type 'SE'
 Trigger,Key,Type,Value
 ```
 
-* Other lines configure *midi code shortcuts*, according to Shortcut,InverseShortcut,Midicode in hex format. First you list the shortcut, that you refer to in your setlist. If available, you can add the inverse command shortcut that undo's the change, if that is available. Otherwise you can leave it empty. Finally the System Exclusive Message in hex format is added. Here are a number of commands listed, enabling and disabling patches 1 until 4 and presets 1 and 2 (called studiosets in the Roland FA-08 device).
+* All lines that don't start with 'Device' or 'Trigger' configure *midi shortcuts*, according to the format:
+```
+Shortcut,InverseShortcut,Midicode in hex format
+``` 
+First you list the shortcut, that you refer to in your setlist. If available, you can add the inverse command shortcut that undo's the change, if that is available. Otherwise you can leave it empty. Finally the System Exclusive Message in hex format is added. Here are a number of commands listed, enabling and disabling patches 1 until 4 and presets 1 and 2 (called studiosets in the Roland FA-08 device).
 * Lines that start with a semicolon and empty lines are ignored (so the semicolon can be used for comments.
 
 **Example midi.txt:**
@@ -74,9 +82,21 @@ With an incremental change: Song name,Measure,empty,Midicodes
 
 Midi codes have different forms. The following types are implemented:
 * Midi codes as defined in midi.txt. The codes, 1 and 2, and the incremental change shortcuts (the +1 until +4 and -1 until -4) are midi codes configured for the midi device. 
-* System exclusive hex messages, e.g. F0 41 10 00 00 77 12 18 00 40 02 01 25 F7.
-* Program Change: PC-Channel-Program-0 (the 0 at the end is ignored)
-* Control Chanee: CC-Channel-Control-Value
+* System exclusive hex messages:
+```
+F0 41 10 00 00 77 12 18 00 40 02 01 25 F7
+```
+
+* Program change mesages (the 0 at the end is ignored and can be left out):
+```
+PC-Channel-Program-0
+```
+
+* Control Chanee: 
+```
+CC-Channel-Control-Value
+```
+
 * Lines that start with a semicolon and empty lines are ignored (so the semicolon can be used for comments.
 
 **Example setlist.txt:**
