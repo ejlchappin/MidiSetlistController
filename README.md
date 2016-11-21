@@ -1,7 +1,7 @@
 ## Introduction
-The MidiSetListController enables quick but sophisticated setlists with elements that sends particular midi messages to synthesizers or other midi devices, for live performances or studio usages, with intuitive navigation features and advanced midi triggers. A key feature is that the setlist can easily shift between presets, but also by modifying the preset on the fly, for instance enable or disable layered sounds. The setlist can also be navigated by a midi pedal that sends a particular control change message.
+The MidiSetListController enables quick but sophisticated setlists with elements that send particular midi messages to synthesizers or other midi devices, for live performances or studio usages, with intuitive navigation features and advanced midi triggers. A key feature is that the setlist can easily shift between presets, but also by modifying the preset on the fly, for instance enable or disable layered sounds. The setlist can also be navigated by midi triggers, for instance by configuring a pedal that sends a particular control change message.
 
-The controller is developed in order to be very quick in making and modifying rather complicated setlists and maintain a stable setting for live performances. 
+The controller is developed in order to be very quick in making and modifying rather complicated setlists and maintain a robust setting for live performances. 
 
 ![screenshot](https://github.com/ejlchappin/MidiSetlistController/raw/master/MidiSetlistController.png)
 
