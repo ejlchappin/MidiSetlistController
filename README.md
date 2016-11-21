@@ -71,14 +71,20 @@ The midi code can be found quite easily in the application. When the device is p
 ## Making or modyfing a setlist
 A setlist starts with a name on the first line for your own reference (see also the example below). Afterwards, lines can have to formats, one for presets and one for incremental changes. The format is comma-separated. When making a change to the setlist on disk, just press CTRL-R to reload the setlist.
 
-With a new preset: Song name,Measure,Preset,Midicode,Sound names
+With a new preset: 
+```
+Song name,Measure,Preset,Midicode,Sound names
+```
 
-With an incremental change: Song name,Measure,empty,Midicodes
+With an incremental change: 
+```
+Song name,Measure,,Midicodes (comma-separated)
+```
 
 * The *songname* needs only to be presented when it starts, the application copies it over until it changes.
 * The *measure* is purely for the user, to indicate where this setlist item is activated.
 * The *preset* switches a preset that is self-contained, that is, you can switch from any position to another preset and no history of other codes matter. When there is a preset, no incremental changes are read. The rest of the line is reserved for listing the patch sounds that are configured in this preset. This enables the applicaiton to display the current sounds also when incremental changes are made later (displaying sound 1 when midicode +1 is executed for instance). 
-* The *midi codes* are a comma-separated list of incremental changes within the current preset. Each change is sent seperately to the midi device. When moving up and down the setlist within a preset, incremental changes (or their reverse) are executed, and the preset is not reset. 
+* The *midi codes* are a comma-separated list of incremental changes within the current preset. Each change is sent seperately to the midi device. When moving up and down the setlist within a preset, incremental changes (or their reverse) are executed, and the preset is not reset. Note that the Preset place-holder remains empty, so there is a double comma.
 
 Midi codes have different forms. The following types are implemented:
 * Midi codes as defined in midi.txt. The codes, 1 and 2, and the incremental change shortcuts (the +1 until +4 and -1 until -4) are midi codes configured for the midi device. 
