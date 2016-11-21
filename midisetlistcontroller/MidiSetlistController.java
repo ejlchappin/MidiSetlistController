@@ -1,19 +1,25 @@
 package midisetlistcontroller;
 
+import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Desktop;
+import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiDevice;
 import javax.sound.midi.MidiDevice.Info;
@@ -67,9 +73,10 @@ public class MidiSetlistController extends JFrame
     boolean listenerShouldBeReopened = false;
     Receiver receiver = null;
     boolean checkMidiDeviceAvailable = true;
-    HashMap<String, String> midiCodesMap = new HashMap<String, String>();
-    HashMap<String, String> midiCodesOpposits = new HashMap<String, String>();
-    ArrayList<SetlistItem> setlist = new ArrayList<SetlistItem>();
+    HashMap<String, String> midiCodesMap = new HashMap<>();
+    HashMap<String, String> midiCodesOpposits = new HashMap<>();
+    ArrayList<MidiTrigger> triggerlist = new ArrayList<>();
+    ArrayList<SetlistItem> setlist = new ArrayList<>();
     JTextArea displayArea;
     JTextArea displayAreaCurrent;
     final JFileChooser fc = new JFileChooser();
@@ -78,11 +85,8 @@ public class MidiSetlistController extends JFrame
     int numberFromKeys = 0;
     String configFilename = System.getProperty("user.dir") + "/midi.txt";//default filename
     String setlistFilename = System.getProperty("user.dir") + "/setlist.txt";//default filename
-    int pedalChannel;
-    int pedalControlChange;
-    int pedalValue;
     boolean printMidiReceived = false;
-    int largeFontSize = 38;
+    int largeFontSize = 32;
     int smallFontSize = 16;
 
     /**
@@ -93,13 +97,7 @@ public class MidiSetlistController extends JFrame
         //Use an appropriate Look and Feel
         try {
             UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-        } catch (UnsupportedLookAndFeelException ex) {
-            ex.printStackTrace();
-        } catch (IllegalAccessException ex) {
-            ex.printStackTrace();
-        } catch (InstantiationException ex) {
-            ex.printStackTrace();
-        } catch (ClassNotFoundException ex) {
+        } catch (UnsupportedLookAndFeelException | IllegalAccessException | InstantiationException | ClassNotFoundException ex) {
             ex.printStackTrace();
         }
         // Turn off metal's use of bold fonts //
@@ -108,6 +106,7 @@ public class MidiSetlistController extends JFrame
         //Schedule a job for event dispatch thread:
         //creating and showing this application's GUI.
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 createAndShowGUI();
             }
@@ -140,6 +139,7 @@ public class MidiSetlistController extends JFrame
         frame.pack();
         frame.setVisible(true);
 
+        //Start the midi listener thread
         frame.createListenerThread();
     }
 
@@ -300,6 +300,12 @@ public class MidiSetlistController extends JFrame
         menuItem.addActionListener(this);
         menuDisplay.add(menuItem);
 
+
+        menuItem = new JMenuItem("Write log", KeyEvent.VK_L);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, ActionEvent.CTRL_MASK));
+        menuItem.addActionListener(this);
+        menuDisplay.add(menuItem);
+
         this.setJMenuBar(menuBar);
 
         //Add display area
@@ -330,63 +336,91 @@ public class MidiSetlistController extends JFrame
         readMidiConfig();
         openMidiDevice();
         readSetlist();
-        runSetlistItemNumber(0);
+        if (setlist.size() > 0) {
+            runSetlistItemNumber(0);
+        }
         displayArea.requestFocusInWindow();
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
         JMenuItem source = (JMenuItem) (e.getSource());
         String menuItem = source.getText();
 
         //Translate different menu options into differen actions:
-        if (menuItem.equals("Load midi config file")) {
-            if (chooseConfigFile()) {
+        switch (menuItem) {
+            case "Load midi config file":
+                if (chooseConfigFile()) {
+                    readMidiConfig();
+                    openMidiDevice();
+                }
+                break;
+            case "Edit midi config":
+                editMidiConfig();
+                break;
+            case "Reload midi config":
                 readMidiConfig();
                 openMidiDevice();
-            }
-        } else if (menuItem.equals("Edit midi config")) {
-            editMidiConfig();
-        } else if (menuItem.equals("Reload midi config")) {
-            readMidiConfig();
-            openMidiDevice();
-        } else if (menuItem.equals("List midi devices")) {
-            listMidiDevices();
-        } else if (menuItem.equals("Open midi device")) {
-            openMidiDevice();
-        } else if (menuItem.equals("Close midi device")) {
-            closeMidiDevice();
-        } else if (menuItem.equals("List midi shortcuts available")) {
-            displayMidiCodesAvailable();
-        } else if (menuItem.equals("List midi shortcuts with codes")) {
-            displayMidiCodes();
-        } else if (menuItem.equals("Send midi test note")) {
-            testSendMessage();
-        } else if (menuItem.equals("Toggle midi check while sending")) {
-            checkMidiDeviceAvailable = !checkMidiDeviceAvailable;
-        } else if (menuItem.equals("Choose setlist file")) {
-            if (chooseSetlistFile()) {
+                break;
+            case "List midi devices":
+                listMidiDevices();
+                break;
+            case "Open midi device":
+                openMidiDevice();
+                break;
+            case "Close midi device":
+                closeMidiDevice();
+                break;
+            case "List midi shortcuts available":
+                displayMidiCodesAvailable();
+                break;
+            case "List midi shortcuts with codes":
+                displayMidiCodes();
+                break;
+            case "Send midi test note":
+                testSendMessage();
+                break;
+            case "Toggle midi check while sending":
+                checkMidiDeviceAvailable = !checkMidiDeviceAvailable;
+                break;
+            case "Choose setlist file":
+                if (chooseSetlistFile()) {
+                    readSetlist();
+                }
+                break;
+            case "Edit setlist":
+                editSetlist();
+                break;
+            case "Reload setlist":
                 readSetlist();
-            }
-        } else if (menuItem.equals("Edit setlist")) {
-            editSetlist();
-        } else if (menuItem.equals("Reload setlist")) {
-            readSetlist();
-        } else if (menuItem.equals("Display setlist")) {
-            displaySetlist();
-        } else if (menuItem.equals("Toggle colors")) {
-            toggleColors();
-        } else if (menuItem.equals("Toggle incoming midi")) {
-            togglePrintMidiReceived();
-        } else if (menuItem.equals("Clear screen")) {
-            clearTextArea();
-        } else if (menuItem.equals("Increase font dashboard")) {
-            increaseLargeFont();
-        } else if (menuItem.equals("Decrease font dashboard")) {
-            decreaseLargeFont();
-        } else if (menuItem.equals("Increase font main display")) {
-            increaseSmallFont();
-        } else if (menuItem.equals("Decrease font main display")) {
-            decreaseSmallFont();
+                break;
+            case "Display setlist":
+                displaySetlist();
+                break;
+            case "Toggle colors":
+                toggleColors();
+                break;
+            case "Toggle incoming midi":
+                togglePrintMidiReceived();
+                break;
+            case "Clear screen":
+                clearTextArea();
+                break;
+            case "Write log":
+                writeLog();
+                break;
+            case "Increase font dashboard":
+                increaseLargeFont();
+                break;
+            case "Decrease font dashboard":
+                decreaseLargeFont();
+                break;
+            case "Increase font main display":
+                increaseSmallFont();
+                break;
+            case "Decrease font main display":
+                decreaseSmallFont();
+                break;
         }
         displayArea.setCaretPosition(displayArea.getDocument().getLength());
     }
@@ -402,9 +436,8 @@ public class MidiSetlistController extends JFrame
     private void handleKey(KeyEvent e) {
 
         //Find out which key is pressed
-        int id = e.getID();
-        String key = null;
-        if (id == KeyEvent.KEY_TYPED) {
+        String key;
+        if (e.getID() == KeyEvent.KEY_TYPED) {
             Character c = e.getKeyChar();
             key = c.toString();
         } else {
@@ -412,30 +445,42 @@ public class MidiSetlistController extends JFrame
             key = KeyEvent.getKeyText(keyCode);
         }
 
-        if (key.equals("Up")) {
-            runSetlistPrevious();
-        } else if (key.equals("Left")) {
-            runSetlistPrevious();
-        } else if (key.equals("Down")) {
-            runSetlistNext();
-        } else if (key.equals("Right")) {
-            runSetlistNext();
-        } else if (key.equals("Space")) {
-            runSetlistNext();
-        } else if (isNumeric(key)) {
+        if (isNumeric(key)) {
             // write number to the screen (and keep it)
             numberFromKeys = 10 * numberFromKeys + intValue(key);
             write(key);
-        } else if (key.equals("Home")) {
-            runSetlistStart();
-        } else if (key.equals("End")) {
-            runSetlistEnd();
-        } else if (key.equals("Page Up")) {
-            runSetListPreviousPreset();
-        } else if (key.equals("Page Down")) {
-            runSetListNextPreset();
-        } else if (key.equals("Enter")) {
-            runSetlistItemFromKeyboard();
+        }
+        switch (key) {
+            case "Up":
+                runSetlistPrevious();
+                break;
+            case "Left":
+                runSetlistPrevious();
+                break;
+            case "Down":
+                runSetlistNext();
+                break;
+            case "Right":
+                runSetlistNext();
+                break;
+            case "Space":
+                runSetlistNext();
+                break;
+            case "Home":
+                runSetlistStart();
+                break;
+            case "End":
+                runSetlistEnd();
+                break;
+            case "Page Up":
+                runSetListPreviousPreset();
+                break;
+            case "Page Down":
+                runSetListNextPreset();
+                break;
+            case "Enter":
+                runSetlistItemFromKeyboard();
+                break;
         }
         displayAreaCurrent.requestFocusInWindow();
     }
@@ -611,7 +656,7 @@ public class MidiSetlistController extends JFrame
                     if (midiCodesMap.containsKey(s)) {
                         sendMessage(midiCodesMap.get(s));
                     } else {
-                        writeLine("Error 6b, midicodes map doesn't contain midi code for message " + s);
+                        sendMessage(s);
                     }
                 }
             }
@@ -634,7 +679,7 @@ public class MidiSetlistController extends JFrame
                         if (midiCodesMap.containsKey(reverseMidiCode)) {
                             sendMessage(midiCodesMap.get(reverseMidiCode));
                         } else {
-                            writeLine("Error 6b, midicodes map doesn't contain midi code for message " + reverseMidiCode);
+                            sendMessage(reverseMidiCode);
                         }
 
                     } else {
@@ -643,7 +688,7 @@ public class MidiSetlistController extends JFrame
                         if (midiCodesMap.containsKey(s)) {
                             sendMessage(midiCodesMap.get(s));
                         } else {
-                            writeLine("Error 6b, midicodes map doesn't contain midi code for message " + s);
+                            sendMessage(s);
                         }
                     }
                 }
@@ -682,56 +727,81 @@ public class MidiSetlistController extends JFrame
 
     //Reads configuration file for midi device and codes
     public void readMidiConfig() {
+        String deviceName = "";
+        triggerlist = new ArrayList<>();
+
         BufferedReader reader = readFile(configFilename);
-        String name = "";
-
-        //First line is midi device name
-        try {
-            name = reader.readLine();
-        } catch (Exception e) {
-            writeLine("Error 5a: file read error");
-        }
-        writeLine("Midi device configured: " + name);
-        selectMidiDevice(name);
-
-        //Second line is pedal information: channel, control change, value
-        try {
-            name = reader.readLine();
-        } catch (Exception e) {
-            writeLine("Error 5a: file read error");
-        }
-        String[] secondLine = name.split(",");
-        if (secondLine.length == 3) {
-            pedalChannel = intValue(secondLine[0]);
-            pedalControlChange = intValue(secondLine[1]);
-            pedalValue = intValue(secondLine[2]);
-            writeLine("Midi pedal configuration set to channel: " + pedalChannel + ", control change: " + pedalControlChange + ", value: " + pedalValue);
-        } else {
-            writeLine("Midi pedal configuration not correct on second line of config.");
-        }
-
-        //Read midi codes.
+        String line = "";
         try {
             while (reader.ready()) {
-                name = reader.readLine();
-                String[] code = name.split(",");
-                if (code.length >= 2) {
-                    midiCodesMap.put(code[0], code[1]);
-                } else {
-                    writeLine("Malformed midi code: " + code);
-                }
-                if (code.length >= 3) {
-                    midiCodesOpposits.put(code[0], code[2]);
+                line = reader.readLine();
+                //if not commented out with ;
+                if (!line.startsWith(";") && !line.isEmpty()) {
+                    String[] lineSplit = line.split(",");
+                    if (lineSplit[0].equals("Device")) {
+                        deviceName = lineSplit[1];
+                        writeLine("Midi device configured: " + deviceName);
+                    } else if (lineSplit[0].equals("Trigger")) {
+
+                        String key = lineSplit[1];
+                        String triggerMessageType = lineSplit[2];
+                        String[] triggerMessageContent = lineSplit[3].split("-");
+                        boolean error = false;
+
+                        int triggerChannel = 0;
+                        int triggerControl = 0;
+                        int triggerValue = 0;
+                        String sysexCode = "";
+                        String midiCode = "";
+
+                        switch (triggerMessageType) {
+                            case "CC":
+                            case "PC":
+                                if (triggerMessageContent.length > 1) {
+                                    triggerChannel = intValue(triggerMessageContent[0]);
+                                    triggerControl = intValue(triggerMessageContent[1]);
+                                } else if (triggerMessageContent.length > 2) {
+                                    triggerValue = intValue(triggerMessageContent[2]);
+                                } else {
+                                    error = true;
+                                }
+                                break;
+                            case "SE":
+                                sysexCode = triggerMessageContent[0];
+                                break;
+                            case "MC":
+                                midiCode = triggerMessageContent[0];
+                                break;
+                        }
+
+                        if (!error) {
+                            MidiTrigger trigger = new MidiTrigger(key, triggerMessageType, triggerChannel, triggerControl, triggerValue, sysexCode, midiCode);
+                            triggerlist.add(trigger);
+                            writeLine(trigger.toString());
+                        } else {
+                            writeLine("Malformed midi code: " + line);
+                        }
+                    } else {
+                        if (lineSplit.length >= 3) {
+                            midiCodesMap.put(lineSplit[0], lineSplit[2]);
+                            midiCodesOpposits.put(lineSplit[0], lineSplit[1]);
+                        } else {
+                            writeLine("Malformed midi code: " + line);
+                        }
+                    }
                 }
             }
         } catch (Exception e) {
-            writeLine("Error 5b: file read error");
+            writeLine("Midi config error on line: " + line);
         }
+        //Find the midi device
+        selectMidiDevice(deviceName);
     }
 
     //Write out the midi codes 
     public void displayMidiCodes() {
         writeLine("Midi codes configured:");
+
         for (Map.Entry<String, String> entry : midiCodesMap.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
@@ -753,7 +823,7 @@ public class MidiSetlistController extends JFrame
         writeLine("");
         write("Opposites configured for: ");
         for (String s : midiCodesOpposits.keySet()) {
-            write(s + "(" + midiCodesOpposits.get(s) + "), ");
+            write(s + " (" + midiCodesOpposits.get(s) + "), ");
         }
         writeLine("");
     }
@@ -776,7 +846,7 @@ public class MidiSetlistController extends JFrame
         try {
             name = reader.readLine();
         } catch (Exception e) {
-            writeLine("Error 5a: file read error");
+            writeLine("Reading error in midi config. Formatting: line one: device name, line two: pedal config (channel,cc,value), other lines: shortcut,midicode,opposite shortcut. Problem with line: " + name);
         }
         writeLine(newline + "Setlist: " + name);
 
@@ -786,14 +856,16 @@ public class MidiSetlistController extends JFrame
         try {
             while (reader.ready()) {
                 name = reader.readLine();
-                String[] code = name.split(",");
-                SetlistItem item = new SetlistItem(code, mostRecentSongName, mostRecentSounds);
-                mostRecentSongName = item.getSongName();
-                mostRecentSounds = item.getSounds();
-                setlist.add(item);
+                if (!name.startsWith(";") && !name.isEmpty()) {
+                    String[] code = name.split(",");
+                    SetlistItem item = new SetlistItem(code, mostRecentSongName, mostRecentSounds);
+                    mostRecentSongName = item.getSongName();
+                    mostRecentSounds = item.getSounds();
+                    setlist.add(item);
+                }
             }
         } catch (Exception e) {
-            writeLine("Error 5b: file read error");
+            writeLine("Reading error in setlist. Formatting should be Songname,Measure,Preset,SoundNames or Songname,Measure,,Midicodes. Problem with line: " + name);
         }
     }
 
@@ -818,6 +890,7 @@ public class MidiSetlistController extends JFrame
     public void selectMidiDevice(String name) {
         MidiDevice.Info[] infos = MidiSystem.getMidiDeviceInfo();
         boolean found = false;
+
         for (int i = 0; i < infos.length; i++) {
             try {
                 if (infos[i].getName().equals(name)) {
@@ -831,14 +904,13 @@ public class MidiSetlistController extends JFrame
                     if (r == 0) {
                         deviceToListen = thisDevice;
                     }
-
                 }
             } catch (MidiUnavailableException e) {
-                writeLine("Error 5, could not load device.");
+                writeLine("Could not open midi device.");
             }
         }
         if (found == false) {
-            writeLine("Didn't find the device");
+            writeLine("Didn't find the midi device");
         }
     }
 
@@ -853,34 +925,33 @@ public class MidiSetlistController extends JFrame
 
     //Opens the currently selected midi device.
     public void openMidiDevice() {
-        if (device == null) {
-            writeLine("No device selected yet");
-        } else {
+        if (device != null) {
             try {
                 device.close();
                 device.open();
                 writeLine("Midi sender is now opened");
+                listenerShouldBeReopened = true;
             } catch (MidiUnavailableException e) {
-                writeLine("Error 3, opening device exclusively.");
+                if (checkMidiDeviceAvailable) {
+                    writeLine("Midi device couldn't be found");
+                }
             }
         }
-        listenerShouldBeReopened = true;
+
     }
 
     //Closes the currently selected midi device.
     public void closeMidiDevice() {
         writeLine("Closing currently selected device");
-        if (device == null) {
-            writeLine("No device selected yet");
-        } else if (device.isOpen()) {
-            try {
-                device.close();
-                writeLine("Device is now closed");
-            } catch (Exception e) {
-                writeLine("Error 4, closing device");
+        if (device != null) {
+            if (device.isOpen()) {
+                try {
+                    device.close();
+                    writeLine("Device is now closed");
+                } catch (Exception e) {
+                    writeLine("Error closing midi device");
+                }
             }
-        } else {
-            writeLine("Device was already closed");
         }
     }
 
@@ -893,7 +964,6 @@ public class MidiSetlistController extends JFrame
             // moderately loud (velocity = 93).
             myMsg.setMessage(ShortMessage.NOTE_ON, 0, 60, 93);
         } catch (InvalidMidiDataException ex) {
-            writeLine("Error 1: bad midi message");
         }
         long timeStamp = -1;
         try {
@@ -901,7 +971,7 @@ public class MidiSetlistController extends JFrame
             writeLine("Sending test tone");
             rcvr.send(myMsg, timeStamp);
         } catch (Exception e) {
-            writeLine("Error 2b: no midi device selected");
+            writeLine("Error in sending test message");
         }
     }
 
@@ -913,6 +983,30 @@ public class MidiSetlistController extends JFrame
     //Cleares the display area
     private void clearTextArea() {
         displayArea.setText("");
+    }
+
+    //Cleares the display area
+    private void writeLog() {
+        writeToFile("log.txt", displayArea.getText());
+    }
+
+    private void writeToFile(String filename, String text) {
+        BufferedWriter writer = null;
+        try {
+            //System.getProperty("user.dir") + "/" + 
+            writer = new BufferedWriter(new FileWriter(filename));
+            writer.write(text);
+            writeLine("Written to " + filename);
+
+        } catch (IOException e) {
+        } finally {
+            try {
+                if (writer != null) {
+                    writer.close();
+                }
+            } catch (IOException e) {
+            }
+        }
     }
 
     public void toggleColors() {
@@ -956,7 +1050,7 @@ public class MidiSetlistController extends JFrame
     }
 
     public void sendMessage(String messageBody) {
-        
+
         // Check whether the midi device is there
         if (checkMidiDeviceAvailable) {
             try {
@@ -968,29 +1062,63 @@ public class MidiSetlistController extends JFrame
             }
         }
 
-        SysexMessage sysmsg = new SysexMessage();
-        try {
-            byte[] messageData = byteStringToByteArray(messageBody);
-            sysmsg.setMessage(messageData, messageData.length);
+        if (messageBody.startsWith("PC") || messageBody.startsWith("CC")) {
+            String[] messagePieces = messageBody.split("-");
+            int messageType = 0;
+            if (messagePieces[0].equals("PC")) {
+                messageType = ShortMessage.PROGRAM_CHANGE;
+            }
+            if (messagePieces[0].equals("CC")) {
+                messageType = ShortMessage.CONTROL_CHANGE;
+            }
+            int channel = intValue(messagePieces[1]) - 1;
+            int control = intValue(messagePieces[2]);
+            int value = 0;
+            if (messagePieces.length >= 4) {
+                value = intValue(messagePieces[3]);
+            }
+            ShortMessage myMsg = new ShortMessage();
 
-        } catch (Exception ex) {
-            writeLine("Error 6c: bad midi message");
-        }
-        long timeStamp = -1;
-        try {
-            Receiver rcvr = device.getReceiver();
-            rcvr.send(sysmsg, timeStamp);
-        } catch (Exception e) {
-            writeLine("Error 6e: no midi device selected"); //don't display this error...
+            try {
+                myMsg.setMessage(messageType, channel, control, value);
+            } catch (InvalidMidiDataException ex) {
+                writeLine("Error making midi message " + myMsg.toString());
+            }
+            long timeStamp = -1;
+            try {
+                Receiver rcvr = device.getReceiver();
+                rcvr.send(myMsg, timeStamp);
+            } catch (Exception e) {
+                if (checkMidiDeviceAvailable) {
+                    writeLine("Error in sending PC or CC message: " + messageBody);
+                }
+            }
+        } else {
+            SysexMessage sysmsg = new SysexMessage();
+            try {
+                byte[] messageData = byteStringToByteArray(messageBody);
+                sysmsg.setMessage(messageData, messageData.length);
+            } catch (Exception ex) {
+                writeLine("Error 6c: bad midi message: " + messageBody);
+            }
+            long timeStamp = -1;
+            try {
+                Receiver rcvr = device.getReceiver();
+                rcvr.send(sysmsg, timeStamp);
+            } catch (Exception e) {
+                if (checkMidiDeviceAvailable) {
+                    writeLine("Midi device not selected or opened");
+                }
+            }
         }
     }
 
-    public static byte[] byteStringToByteArray(String s) {
+    public byte[] byteStringToByteArray(String s) {
         String[] stringArray = s.split(" ");
         int len = stringArray.length;
         byte[] data = new byte[len];
         for (int i = 0; i < len; i++) {
-            int j = Integer.parseInt(stringArray[i]);
+            int j = hexToDecimal(stringArray[i]);
             data[i] = (byte) j;
         }
         return data;
@@ -1039,10 +1167,17 @@ public class MidiSetlistController extends JFrame
     public void keyReleased(KeyEvent e) {
     }
 
-    public void pedalTrigger() {
-        runSetlistNext();
-        displayArea.setCaretPosition(displayArea.getDocument().getLength());
-        displayAreaCurrent.requestFocusInWindow();
+    public void executeMidiTrigger(MidiTrigger trigger) {
+        try {
+            Robot robot = new Robot();
+
+            // Simulate a key press
+            robot.keyPress(trigger.keyEvent);
+            robot.keyRelease(trigger.keyEvent);
+
+        } catch (AWTException e) {
+            writeLine("Problem with midi trigger");
+        }
     }
 
     public static boolean isNumeric(String str) {
@@ -1055,7 +1190,7 @@ public class MidiSetlistController extends JFrame
     }
 
     public static int intValue(String str) {
-        int d = 0;
+        int d;
         try {
             d = Integer.parseInt(str);
         } catch (NumberFormatException nfe) {
@@ -1064,13 +1199,50 @@ public class MidiSetlistController extends JFrame
         return d;
     }
 
+    public static int hexToDecimal(String s) {
+        String digits = "0123456789ABCDEF";
+        s = s.toUpperCase();
+        int val = 0;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            int d = digits.indexOf(c);
+            val = 16 * val + d;
+        }
+        return val;
+    }
+
+    public static String decimalToHex(int d) {
+        String digits = "0123456789ABCDEF";
+        if (d == 0) {
+            return "0";
+        }
+        String hex = "";
+        while (d > 0) {
+            int digit = d % 16;                // rightmost digit
+            hex = digits.charAt(digit) + hex;  // string concatenation
+            d = d / 16;
+        }
+        return hex;
+    }
+
+    public static <T, E> T getKeyByValue(Map<T, E> map, E value) {
+        for (Entry<T, E> entry : map.entrySet()) {
+            if (Objects.equals(value, entry.getValue())) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
     // Configure the midi receiver
     public void listenToDevice() {
 
         // Wait until the display is setup
         while (displayArea == null) {
             try {
-                Thread.sleep(50);
+                //TODO work with ThreadPoolExecutor from: http://stackoverflow.com/questions/3535754/netbeans-java-new-hint-thread-sleep-called-in-loop
+                // OR check https://ejrh.wordpress.com/2012/07/13/sleeping-in-loops-considered-harmful/
+                Thread.sleep(10);
             } catch (InterruptedException e) {
                 writeLine("Waiting");
             }
@@ -1086,7 +1258,7 @@ public class MidiSetlistController extends JFrame
             //Listener is now enabled. Wait until it needs reopening (after reloading midi config)
             while (!listenerShouldBeReopened) {
                 try {
-                    Thread.sleep(50);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
                     writeLine("Listener error 5");
                 }
@@ -1097,7 +1269,7 @@ public class MidiSetlistController extends JFrame
         } else {
             // Wait
             try {
-                Thread.sleep(50);
+                Thread.sleep(10);
             } catch (InterruptedException e) {
                 writeLine("Listener error 5");
             }
@@ -1107,7 +1279,6 @@ public class MidiSetlistController extends JFrame
     public void openDeviceToListen() {
         // Skip if the deviceToListen is not set yet.
         if (deviceToListen != null) {
-//            writeLine("Midi device to listen to is set");
             try {
                 deviceToListen.open();
                 writeLine("Midi listener is opened");
@@ -1120,13 +1291,6 @@ public class MidiSetlistController extends JFrame
                 t.setReceiver(receiver);
             } catch (MidiUnavailableException e) {
                 writeLine("Error receiver 1");
-            }
-
-            try {
-                Transmitter t = deviceToListen.getTransmitter();
-                t.setReceiver(receiver);
-            } catch (MidiUnavailableException e) {
-                writeLine("Error receiver 2");
             }
         }
     }
