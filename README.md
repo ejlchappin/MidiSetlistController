@@ -39,11 +39,11 @@ For configured midi codes, type 'MC' or system exclusive hex code, type 'SE'
 Trigger,Key,Type,Value
 ```
 
-* All lines that don't start with 'Device' or 'Trigger' configure *midi shortcuts*, according to the format:
+* All lines that don't start with 'Device' or 'Trigger' configure *midi shortcuts*, according to the following format. First you list the shortcut, that you refer to in your setlist. If available, you can add the inverse command shortcut that undo's the change. Otherwise you leave it empty. Finally a System Exclusive Message in hex format is added. Here are a number of commands listed, enabling and disabling patches 1 until 4 and presets 1 and 2 (called studiosets in the Roland FA-08 device).
 ```
 Shortcut,InverseShortcut,Midicode in hex format
 ``` 
-First you list the shortcut, that you refer to in your setlist. If available, you can add the inverse command shortcut that undo's the change, if that is available. Otherwise you can leave it empty. Finally the System Exclusive Message in hex format is added. Here are a number of commands listed, enabling and disabling patches 1 until 4 and presets 1 and 2 (called studiosets in the Roland FA-08 device).
+
 * Lines that start with a semicolon and empty lines are ignored (so the semicolon can be used for comments.
 
 **Example midi.txt:**
