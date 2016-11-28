@@ -95,12 +95,12 @@ Midi codes have different forms. The following types are implemented:
 F0 41 10 00 00 77 12 18 00 40 02 01 25 F7
 ```
 
-* Program change mesages (the 0 at the end is ignored and can be left out):
+* Program change messages:
 ```
 PC-Channel-Program
 ```
 
-* Control Chanee: 
+* Control Change: 
 ```
 CC-Channel-Control-Value
 ```
