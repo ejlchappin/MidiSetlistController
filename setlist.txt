@@ -1,13 +1,14 @@
 Prestige 2016
 Basic,,1
-;Song name,Measure,Preset,Midicode,Sound names
+;Song name,Measure,Preset,Sound names
 My favorite song,,2,Sound name 1,Sound name 2,Sound name3,Sound name 4
 ;Song name,Measure,empty,Midicodes
-,28,,+2,-1
-,49,,+3,+4
-,50,,-2
-My next song,,2,Sound name 5,Sound name 6,Sound name 7,Sound name 8
+,Verse 1,,+2,-1
+,Refrain,,+3,+4
+,Bridge,,-2
+My next song,,3,Sound name 5,Sound name 6,Sound name 7,Sound name 8
 ,30,,+1,+2,+3,+4
+,31,,-1,-2,-3
 ,50,,CC-1-11-64
 ,51,,CC-1-11-30
 ,70,,PC-1-0-0
