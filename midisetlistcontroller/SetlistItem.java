@@ -9,21 +9,19 @@ import java.util.Arrays;
 public class SetlistItem {
 
     private String songName;
-    private int Measure;
-    private int studioset;
+    private String measure;
+    private int preset;
     private String[] midiCodes;
     private String[] sounds;
 
     SetlistItem(String[] code, String mostRecentSong, String[] mostRecentSounds) {
         this.setSongName(code[0]);
         if (code.length > 1) {
-            if (!code[1].equals("")) {
-                this.setMeasure(Integer.valueOf(code[1]));
-            }
+            this.setMeasure(code[1]);
         }
         if (code.length > 2) {
             if (!code[2].equals("")) {
-                this.setStudioset(Integer.valueOf(code[2]));
+                this.setPreset(Integer.valueOf(code[2]));
             }
         }
 
@@ -43,12 +41,12 @@ public class SetlistItem {
         }
     }
 
-    public int getStudioset() {
-        return studioset;
+    public int getPreset() {
+        return preset;
     }
 
-    public void setStudioset(int studioset) {
-        this.studioset = studioset;
+    public void setPreset(int preset) {
+        this.preset = preset;
     }
 
     public String getSongName() {
@@ -59,12 +57,12 @@ public class SetlistItem {
         this.songName = songName;
     }
 
-    public int getMeasure() {
-        return Measure;
+    public String getMeasure() {
+        return measure;
     }
 
-    public void setMeasure(int Measure) {
-        this.Measure = Measure;
+    public void setMeasure(String measure) {
+        this.measure = measure;
     }
 
     public String[] getMidiCodes() {
@@ -115,21 +113,21 @@ public class SetlistItem {
         return "";
     }
 
-    public String getStudiosetWritten() {
-        if (getStudioset() > 0) {
-            return "\tSet: " + String.valueOf(getStudioset());
+    public String getPresetWritten() {
+        if (getPreset() > 0) {
+            return "\tSet: " + String.valueOf(getPreset());
         }
         return "";
     }
 
     public String getMeasureWritten() {
-        if (getMeasure() > 0) {
-            return "\tM: " + String.valueOf(getMeasure());
+        if (!getMeasure().equals("")) {
+            return "\t@ " + getMeasure();
         }
         return "";
     }
 
     public String toString() {
-        return getSongName() + getMeasureWritten() + getStudiosetWritten() + getMidiCodesWritten() + getSoundNamesAdded();
+        return getSongName() + getMeasureWritten() + getPresetWritten() + getMidiCodesWritten() + getSoundNamesAdded();
     }
 }

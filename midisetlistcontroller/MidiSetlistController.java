@@ -204,31 +204,26 @@ public class MidiSetlistController extends JFrame
         menuMidi.add(menuItem);
 
         menuItem = new JMenuItem("Open midi device", KeyEvent.VK_O);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
         menuItem.addActionListener(this);
         menuMidi.add(menuItem);
 
         menuItem = new JMenuItem("Close midi device", KeyEvent.VK_C);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, ActionEvent.CTRL_MASK));
         menuItem.addActionListener(this);
         menuMidi.add(menuItem);
 
         menuMidi.addSeparator();
 
         menuItem = new JMenuItem("List midi shortcuts available", KeyEvent.VK_L);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_K, ActionEvent.CTRL_MASK));
         menuItem.addActionListener(this);
         menuMidi.add(menuItem);
 
         menuItem = new JMenuItem("List midi shortcuts with codes", KeyEvent.VK_H);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_J, ActionEvent.CTRL_MASK));
         menuItem.addActionListener(this);
         menuMidi.add(menuItem);
 
         menuMidi.addSeparator();
 
         menuItem = new JMenuItem("Send midi test note", KeyEvent.VK_T);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.CTRL_MASK));
         menuItem.addActionListener(this);
         menuMidi.add(menuItem);
 
@@ -256,7 +251,6 @@ public class MidiSetlistController extends JFrame
         menuSetlist.addSeparator();
 
         menuItem = new JMenuItem("Display setlist", KeyEvent.VK_D);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, ActionEvent.CTRL_MASK));
         menuItem.addActionListener(this);
         menuSetlist.add(menuItem);
 
@@ -302,11 +296,12 @@ public class MidiSetlistController extends JFrame
 
 
         menuItem = new JMenuItem("Write log", KeyEvent.VK_L);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, ActionEvent.CTRL_MASK));
         menuItem.addActionListener(this);
         menuDisplay.add(menuItem);
 
         this.setJMenuBar(menuBar);
+
+
 
         //Add display area
         displayArea = new JTextArea();
@@ -317,12 +312,16 @@ public class MidiSetlistController extends JFrame
         displayArea.addKeyListener(this); //if keys are pressed when the display area is in focus.
         JScrollPane scrollPane = new JScrollPane(displayArea);
 
+        ContextMenuMouseListener mouseListener = new ContextMenuMouseListener(); // Add mouse context menu
+        displayArea.addMouseListener(mouseListener);
+
         //Add display area
         displayAreaCurrent = new JTextArea();
         displayAreaCurrent.setEditable(false);
         displayAreaCurrent.setLineWrap(false);
         displayAreaCurrent.setTabSize(6);
         displayAreaCurrent.addKeyListener(this); //if keys are pressed when the display area is in focus.
+        displayAreaCurrent.addMouseListener(mouseListener);
         JScrollPane scrollPaneCurrent = new JScrollPane(displayAreaCurrent);
         scrollPaneCurrent.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
@@ -520,7 +519,7 @@ public class MidiSetlistController extends JFrame
         int previousPreset = currentSetListIndex;
         while (!previousPresetFound && previousPreset > 0) {
             previousPreset--;
-            if (setlist.get(previousPreset).getStudioset() != 0) {
+            if (setlist.get(previousPreset).getPreset() != 0) {
                 //found next preset
                 previousPresetFound = true;
             }
@@ -537,7 +536,7 @@ public class MidiSetlistController extends JFrame
         while (!nextPresetFound & nextPreset < setlist.size() - 1) {
             nextPreset++;
 
-            if (setlist.get(nextPreset).getStudioset() != 0) {
+            if (setlist.get(nextPreset).getPreset() != 0) {
                 //found next preset
                 nextPresetFound = true;
                 runSetlistItemNumber(nextPreset);
@@ -573,7 +572,7 @@ public class MidiSetlistController extends JFrame
             //Is there a later preset we can start from?
             int latestPresetFound = comingFrom + 1;
             for (int i = latestPresetFound; i <= goingTo; i++) {
-                if (setlist.get(i).getStudioset() != 0) {
+                if (setlist.get(i).getPreset() != 0) {
                     //found later preset at nr i.
                     latestPresetFound = i;
                 }
@@ -592,7 +591,7 @@ public class MidiSetlistController extends JFrame
 
             // Is there a preset change in the meantime (note that goingTo may have a preset, but that means there is NO preset change
             for (int i = comingFrom; i > goingTo; i--) {
-                if (setlist.get(i).getStudioset() != 0) {
+                if (setlist.get(i).getPreset() != 0) {
                     differentPreset = true;
                 }
             }
@@ -614,7 +613,7 @@ public class MidiSetlistController extends JFrame
                 int previousPreset = goingTo;
                 while (!presetFound && previousPreset > 0) {
                     previousPreset--;
-                    if (setlist.get(previousPreset).getStudioset() != 0) {
+                    if (setlist.get(previousPreset).getPreset() != 0) {
                         presetFound = true;
                     }
                 }
@@ -636,7 +635,7 @@ public class MidiSetlistController extends JFrame
         System.out.println("Loading preset " + currentSetListIndex + ", reverse codes: " + reverseDirection);
         SetlistItem item = setlist.get(currentSetListIndex);
         String[] midiCodes = item.getMidiCodes();
-        Integer studioset = item.getStudioset();
+        Integer studioset = item.getPreset();
 
         // Normal direction
         if (!reverseDirection) {
@@ -867,6 +866,7 @@ public class MidiSetlistController extends JFrame
         } catch (Exception e) {
             writeLine("Reading error in setlist. Formatting should be Songname,Measure,Preset,SoundNames or Songname,Measure,,Midicodes. Problem with line: " + name);
         }
+        checkSetlist();
     }
 
     public void editSetlist() {
@@ -883,6 +883,37 @@ public class MidiSetlistController extends JFrame
         writeLine("Set list items:");
         for (SetlistItem item : setlist) {
             writeLine(item.toString());
+        }
+    }
+
+    //Writes out the setlist
+
+    //Writes out the setlist
+    public void checkSetlist() {
+        ArrayList<String> codes = new ArrayList<>();
+
+        for (SetlistItem item : setlist) {
+            if (item.getPreset() != 0) {
+                codes = new ArrayList<>();
+            } else {
+                for (String code : item.getMidiCodes()) {
+
+                    //if it has an opposite
+                    String oppositeCode = midiCodesOpposits.get(code);
+                    if (oppositeCode != null) {
+
+                        if (!codes.contains(code) && !codes.contains(oppositeCode)) {
+                            codes.add(code);
+                        } else if (!codes.contains(code) && codes.contains(oppositeCode)) {
+                            int i = codes.indexOf(oppositeCode);
+                            codes.remove(i);
+                            codes.add(code);
+                        } else if (codes.contains(code) && !codes.contains(oppositeCode)) {
+                            writeLine("Inconsistency, midi code " + code + " twice (without reversing) it in setlist item: " + item.toString());
+                        }
+                    }
+                }
+            }
         }
     }
 
