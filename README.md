@@ -1,11 +1,13 @@
 ## Introduction
-The MidiSetListController enables quick but sophisticated setlists with elements that send particular midi messages to synthesizers or other midi devices, for live performances or studio usages, with intuitive navigation features and advanced midi triggers. A key feature is that the setlist can easily shift between presets, but also by modifying the preset on the fly, for instance enable or disable layered sounds. The setlist can also be navigated by midi triggers, for instance by configuring a pedal that sends a particular control change message.
+The MidiSetListController enables quick but sophisticated setlists that send particular midi messages to synthesizers or other midi devices, for live performances or studio usages, with intuitive navigation features and advanced midi or keyboard triggers. A key feature is that the setlist can easily shift between presets, but also modify the preset on the fly, for instance enable or disable layered sounds and apply midi control changes. The setlist can be navigated by multiple midi triggers, for instance by configuring a pedal that sends a particular control change message. 
 
-The controller is developed in order to be very quick in making and modifying rather complicated setlists and maintain a robust setting for live performances. 
+The controller is developed to very quickly make and modify rather complicated setlists, and is robust for a live performance setting. Here is a view of the screen, which has a dashboard on the bottom illustrating the current setting and a display of the past changes.
 
 ![screenshot](https://github.com/ejlchappin/MidiSetlistController/raw/master/MidiSetlistController.png)
 
 ## Install
+No installation is required, the files below are necessary and the configuration needs to be adapted to your midi device.
+
 * Save the [application](https://github.com/ejlchappin/MidiSetlistController/raw/master/MidiSetlistController.jar) to disk
 * Save the [midi configuration](https://raw.githubusercontent.com/ejlchappin/MidiSetlistController/master/midi.txt) to disk
 * Save the [setlist](https://raw.githubusercontent.com/ejlchappin/MidiSetlistController/master/setlist.txt) to disk
@@ -63,28 +65,28 @@ Trigger,Down,CC,16-9-127
 2,,F0 41 10 00 00 77 12 01 00 00 04 55 00 01 25 F7
 ```
 
-Specifying inverse commands makes it possible to move up the setlist within particular presets, by reversing the incremental changes that were done. For instance going up to re-enable patch 1, that was disabled when going down. This makes navigation easier and more fail-safe.
+Specifying inverse commands makes it possible to move up the setlist within particular presets, by reversing the incremental changes that were done. For instance going up to re-enable patch 1, that was disabled when going down. This makes navigation easier and more fail-safe. It also allows for a consistency check, where you get a warning message if you apply the same code twice in the same preset, without reversing it in between. This is important, because it would be inconsistent if you move up the list of settings.
 
 ## Finding your midi codes
-The midi code can be found quite easily in the application. When the device is properly connected, press CTRL-M to enable a display of the incoming midi on the screen. If you now play notes/send midi messages you want with your device, you will see the code/preset that can be used to send the same command. Type the correct messages over (or use the log feature).
+The midi code can be found quite easily in the application. When the device is properly connected, press CTRL-M to enable a display of the incoming midi on the screen. If you now play notes/send midi messages you want with your device, you will see the code/preset that can be used to send the same command. Copy the correct messages over (select and right-click to copy with the mouse, or use the log feature from the Display menu bar).
 
 ## Making or modyfing a setlist
 A setlist starts with a name on the first line for your own reference (see also the example below). Afterwards, lines can have to formats, one for presets and one for incremental changes. The format is comma-separated. When making a change to the setlist on disk, just press CTRL-R to reload the setlist.
 
 With a new preset: 
 ```
-Song name,Measure,Preset,Midicode,Sound names (comma-separated)
+Song name,Place in song,Preset,Midicode,Sound names (comma-separated)
 ```
 
 With an incremental change: 
 ```
-Song name,Measure,,Midicodes (comma-separated)
+Song name,Place in Song,,Midicodes (comma-separated)
 ```
 
 * The *songname* needs only to be presented when it starts, the application copies it over until it changes.
-* The *measure* is purely for the user, to indicate where this setlist item is activated.
-* The *preset* switches a preset that is self-contained, that is, you can switch from any position to another preset and no history of other codes matter. When there is a preset, no incremental changes are read. The rest of the line is reserved for listing the patch sounds that are configured in this preset. This enables the applicaiton to display the current sounds also when incremental changes are made later (displaying sound 1 when midicode +1 is executed for instance). 
-* The *midi codes* are a comma-separated list of incremental changes within the current preset. Each change is sent seperately to the midi device. When moving up and down the setlist within a preset, incremental changes (or their reverse) are executed, and the preset is not reset. Note that the Preset place-holder remains empty, so there is a double comma.
+* The *place in song* is for the user to easily indicate where this setlist item is activated, for instance a measure number or letter or a 'refrain'.
+* The *preset* switches a preset that is self-contained, that is, you can switch from any position to another preset and no history of other codes matter. When there is a preset, no incremental changes are read. The rest of the line is reserved for listing the patch sounds that are configured in this preset. This enables the application to display the current sounds also when incremental changes are made later (displaying sound 1 when midicode +1 is executed for instance). 
+* The *midi codes* are a comma-separated list of incremental changes within the current preset. Each change is sent seperately to the midi device. When moving up and down the setlist within a preset, incremental changes (or their reverse) are executed, and the preset is not reset. Note that the Preset place-holder remains empty here, so there is a double comma.
 
 Midi codes have different forms. The following types are implemented:
 * Midi codes as defined in midi.txt. The codes, 1 and 2, and the incremental change shortcuts (the +1 until +4 and -1 until -4) are midi codes configured for the midi device. 
@@ -95,7 +97,7 @@ F0 41 10 00 00 77 12 18 00 40 02 01 25 F7
 
 * Program change mesages (the 0 at the end is ignored and can be left out):
 ```
-PC-Channel-Program-0
+PC-Channel-Program
 ```
 
 * Control Chanee: 
@@ -107,20 +109,22 @@ CC-Channel-Control-Value
 
 **Example setlist.txt:**
 ```
-Prestige 2016
+Example setlist
+
+;Song name,Place in song,Preset,Sound names
 Basic,,1
+
 My favorite song,,2,Sound name 1,Sound name 2,Sound name3,Sound name 4
-,28,,+2,-1
-,49,,+3,+4
-,50,,-2
-My next song,,2,Sound name 5,Sound name 6,Sound name 7,Sound name 8
+;Song name,Place in song,empty,Midicodes
+,Verse 1,,+2,-1
+,Refrain,,+3,+4
+,Bridge,,-2
+
+My next song,,3,Sound name 5,Sound name 6,Sound name 7,Sound name 8
 ,30,,+1,+2,+3,+4
+,31,,-1,-2,-3
 ,50,,CC-1-11-64
 ,51,,CC-1-11-30
-,70,,PC-1-0-0
-,71,,PC-1-1-0
-,72,,PC-1-2-0
-,73,,PC-1-3-0
-,74,,PC-1-4-0
-,75,,PC-1-5-0
+,70,,PC-1-0
+,71,,PC-1-1
 ```
