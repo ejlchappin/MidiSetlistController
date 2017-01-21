@@ -6,13 +6,13 @@ The controller is developed to very quickly make and modify rather complicated s
 ![screenshot](https://github.com/ejlchappin/MidiSetlistController/raw/master/MidiSetlistController.png)
 
 ## Install
-No installation is required, the files below are necessary and the configuration needs to be adapted to your midi device.
+No installation is required, only the files below are necessary. The configuration file needs to be adapted to your midi device.
 
 * Save the [application](https://github.com/ejlchappin/MidiSetlistController/raw/master/MidiSetlistController.jar) to disk
 * Save the [midi configuration](https://raw.githubusercontent.com/ejlchappin/MidiSetlistController/master/midi.txt) to disk
 * Save the [setlist](https://raw.githubusercontent.com/ejlchappin/MidiSetlistController/master/setlist.txt) to disk
 
-The configuration (and setlist) needs to be adjusted for your own midi device (see below). Start the application by double clicking the jar file. If that doesn't work, the Java path should be configured properly on your device. 
+The configuration needs to be adjusted for your own midi device (see below). Start the application by double clicking the jar file. If that doesn't work, the Java path should be configured properly on your device. 
 
 ## Using the MidiSetlistController
 The applicaton opens by loading the midi configuration, the setlist if the files are present in the same folder. Otherwise use the menu items to load a midi config file (CTRL-Q) and a setlist file (CTRL-S). The application attempts to reach the configured midi device and will show you the result. If all works out, the first setlist item is executed.
@@ -75,17 +75,20 @@ A setlist starts with a name on the first line for your own reference (see also 
 
 With a new preset: 
 ```
-Song name,Place in song,Preset,Sound names (comma-separated)
+Song name,Position in song,Preset,Midi code labels (comma-separated list of code and readable labels)
 ```
 
 With an incremental change: 
 ```
-Song name,Place in Song,,Midicodes (comma-separated)
+Song name,Position in Song,,Midicodes (comma-separated)
 ```
 
+Most important to note here is that either a new preset is called for, or an incremental change. New presets call a preset and define midi code labels. Incremental changes are made by executing midi codes. Song names and position in songs can be added in both cases for visual clues regarding the setlist content. Each element is now described in detail.
+
 * The *songname* needs only to be presented when it starts, the application copies it over until it changes.
-* The *place in song* is for the user to easily indicate where this setlist item is activated, for instance a measure number or letter or a 'refrain'.
+* The *position in song* is for the user to easily indicate where this setlist item is activated, for instance a measure number or letter or a 'refrain'.
 * The *preset* switches a preset that is self-contained, that is, you can switch from any position to another preset and no history of other codes matter. When there is a preset, no incremental changes are read. The rest of the line is reserved for listing the patch sounds that are configured in this preset. This enables the application to display the current sounds also when incremental changes are made later (displaying sound 1 when midicode +1 is executed for instance). 
+* The *midi code labels* are a comma-separated list that gives labels to midi codes. These can de different for different songs. For instance the sound name on patch for a particular song can be the label for the midi code that enables that patch. Code labels are given in comma separated list of midi code,midi label, only for new presets. When an incremental change is made for which a code label is present, it will be displayed on the right in the dashboard. 
 * The *midi codes* are a comma-separated list of incremental changes within the current preset. Each change is sent seperately to the midi device. When moving up and down the setlist within a preset, incremental changes (or their reverse) are executed, and the preset is not reset. Note that the Preset place-holder remains empty here, so there is a double comma.
 
 Midi codes have different forms. The following types are implemented:
@@ -111,16 +114,16 @@ CC-Channel-Control-Value
 ```
 Example setlist
 
-;Song name,Place in song,Preset,Sound names
+;Song name,Place in song,Preset,Midi code labels (code comma label)
 Basic,,1
 
-My favorite song,,2,Sound name 1,Sound name 2,Sound name3,Sound name 4
+My favorite song,,2,+1,Piano,+2,Strings,+3,Organ,+4,Flute
 ;Song name,Place in song,empty,Midicodes
 ,Verse 1,,+2,-1
 ,Refrain,,+3,+4
 ,Bridge,,-2
 
-My next song,,3,Sound name 5,Sound name 6,Sound name 7,Sound name 8
+My next song,,3,+1,Piano,+2,Strings,+3,Organ,+4,Bassoon,PC-1-0,Grand Piano,PC-1-1,Bright Piano
 ,30,,+1,+2,+3,+4
 ,31,,-1,-2,-3
 ,50,,CC-1-11-64
