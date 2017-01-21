@@ -1,22 +1,18 @@
 Example setlist
 
-;Song name,Place in song,Preset,Sound names
+;Song name,Place in song,Preset,Midi code labels (code comma label)
 Basic,,1
 
-My favorite song,,2,Sound name 1,Sound name 2,Sound name3,Sound name 4
+My favorite song,,2,+1,Piano,+2,Strings,+3,Organ,+4,Flute
 ;Song name,Place in song,empty,Midicodes
 ,Verse 1,,+2,-1
 ,Refrain,,+3,+4
 ,Bridge,,-2
 
-My next song,,3,Sound name 5,Sound name 6,Sound name 7,Sound name 8
+My next song,,3,+1,Piano,+2,Strings,+3,Organ,+4,Bassoon,PC-1-0,Grand Piano,PC-1-1,Bright Piano
 ,30,,+1,+2,+3,+4
 ,31,,-1,-2,-3
 ,50,,CC-1-11-64
 ,51,,CC-1-11-30
 ,70,,PC-1-0
 ,71,,PC-1-1
-,72,,PC-1-2
-,73,,PC-1-3
-,74,,PC-1-4
-,75,,PC-1-5
