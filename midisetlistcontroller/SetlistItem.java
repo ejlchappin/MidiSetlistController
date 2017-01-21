@@ -1,6 +1,7 @@
 package midisetlistcontroller;
 
 import java.util.Arrays;
+import java.util.HashMap;
 
 /**
  *
@@ -9,15 +10,17 @@ import java.util.Arrays;
 public class SetlistItem {
 
     private String songName;
-    private String measure;
+    private String position;
     private int preset;
     private String[] midiCodes;
-    private String[] sounds;
+    private HashMap<String, String> midiCodeLabels;
 
-    SetlistItem(String[] code, String mostRecentSong, String[] mostRecentSounds) {
+    SetlistItem(String[] code, String mostRecentSong, HashMap<String, String> mostRecentMidiCodeLabels) {
+        this.midiCodeLabels = new HashMap<>();
+
         this.setSongName(code[0]);
         if (code.length > 1) {
-            this.setMeasure(code[1]);
+            this.setPosition(code[1]);
         }
         if (code.length > 2) {
             if (!code[2].equals("")) {
@@ -31,12 +34,14 @@ public class SetlistItem {
                 this.setMidiCodes(Arrays.copyOfRange(code, 3, code.length));
             }
             //We copy over the most recents song name and sounds.
-            this.setSounds(mostRecentSounds);
             this.setSongName(mostRecentSong);
+            midiCodeLabels.putAll(mostRecentMidiCodeLabels);
         } else {
             //new song, so the elements from nr 4 list the sounds of this patch
             if (code.length > 3) {
-                this.setSounds(Arrays.copyOfRange(code, 3, code.length));
+                for (int i = 3; i < code.length - 1; i += 2) {
+                    this.midiCodeLabels.put(code[i], code[i + 1]);
+                }
             }
         }
     }
@@ -57,12 +62,12 @@ public class SetlistItem {
         this.songName = songName;
     }
 
-    public String getMeasure() {
-        return measure;
+    public String getPosition() {
+        return position;
     }
 
-    public void setMeasure(String measure) {
-        this.measure = measure;
+    public void setPosition(String position) {
+        this.position = position;
     }
 
     public String[] getMidiCodes() {
@@ -76,12 +81,12 @@ public class SetlistItem {
     public void SetlistItem(String[] name) {
     }
 
-    public String[] getSounds() {
-        return sounds;
+    public HashMap<String, String> getMidiCodeLabels() {
+        return midiCodeLabels;
     }
 
-    public void setSounds(String[] sounds) {
-        this.sounds = sounds;
+    public void setMidiCodeLabels(HashMap<String, String> midiCodeLabels) {
+        this.midiCodeLabels = midiCodeLabels;
     }
 
     public String getMidiCodesWritten() {
@@ -93,22 +98,18 @@ public class SetlistItem {
     }
 
     //gives all the sound names of patches that are added 
-    public String getSoundNamesAdded() {
-        String sounds = "";
-        if (getMidiCodes() != null) {
+    public String getMidiCodeLabelsWriten() {
+        String labels = "";
+        if (midiCodeLabels != null && getMidiCodes() != null) {
             for (String code : getMidiCodes()) {
-                if (code.substring(0, 1).equals("+")) {
-                    int patchChanged = Integer.parseInt(code.substring(1)) - 1;
-                    if (getSounds() != null) {
-                        if(getSounds().length > patchChanged){
-                            sounds = sounds.concat("  " + getSounds()[patchChanged]);
-                        }
-                    }
+                String codeLabel = midiCodeLabels.get(code);
+                if (codeLabel != null) {
+                    labels = labels.concat("  " + codeLabel);
                 }
             }
         }
-        if (sounds != ""){
-            return "\t" + sounds;
+        if (labels != "") {
+            return "\t" + labels;
         }
         return "";
     }
@@ -121,13 +122,13 @@ public class SetlistItem {
     }
 
     public String getMeasureWritten() {
-        if (!getMeasure().equals("")) {
-            return "\t@ " + getMeasure();
+        if (!getPosition().equals("")) {
+            return "\t@ " + getPosition();
         }
         return "";
     }
 
     public String toString() {
-        return getSongName() + getMeasureWritten() + getPresetWritten() + getMidiCodesWritten() + getSoundNamesAdded();
+        return getSongName() + getMeasureWritten() + getPresetWritten() + getMidiCodesWritten() + getMidiCodeLabelsWriten();
     }
 }

@@ -851,15 +851,15 @@ public class MidiSetlistController extends JFrame
 
         setlist = new ArrayList<>();
         String mostRecentSongName = "";
-        String[] mostRecentSounds = null;
+        HashMap<String,String> mostRecentMidiCodeLabels = null;
         try {
             while (reader.ready()) {
                 name = reader.readLine();
                 if (!name.startsWith(";") && !name.isEmpty()) {
                     String[] code = name.split(",");
-                    SetlistItem item = new SetlistItem(code, mostRecentSongName, mostRecentSounds);
+                    SetlistItem item = new SetlistItem(code, mostRecentSongName, mostRecentMidiCodeLabels);
                     mostRecentSongName = item.getSongName();
-                    mostRecentSounds = item.getSounds();
+                    mostRecentMidiCodeLabels = item.getMidiCodeLabels();
                     setlist.add(item);
                 }
             }
