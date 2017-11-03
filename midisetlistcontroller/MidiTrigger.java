@@ -35,6 +35,9 @@ public class MidiTrigger {
         
         this.key = key;
         switch (key) {
+            case "Space":
+                this.keyEvent = KeyEvent.VK_SPACE;
+                break;
             case "Down":
                 this.keyEvent = KeyEvent.VK_DOWN;
                 break;

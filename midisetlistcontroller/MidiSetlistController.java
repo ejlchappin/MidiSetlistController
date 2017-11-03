@@ -4,22 +4,27 @@ import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Desktop;
+import java.awt.Image;
 import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiDevice;
 import javax.sound.midi.MidiDevice.Info;
@@ -29,14 +34,20 @@ import javax.sound.midi.Receiver;
 import javax.sound.midi.ShortMessage;
 import javax.sound.midi.SysexMessage;
 import javax.sound.midi.Transmitter;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import static midisetlistcontroller.MidiSetlistController.newline;
@@ -63,7 +74,7 @@ import static midisetlistcontroller.MidiSetlistController.newline;
  * License 2.0
  */
 public class MidiSetlistController extends JFrame
-        implements KeyListener,
+        implements
         ActionListener {
 
     MidiSetlistController frame = null;
@@ -82,33 +93,36 @@ public class MidiSetlistController extends JFrame
     final JFileChooser fc = new JFileChooser();
     static final String newline = System.getProperty("line.separator");
     int currentSetListIndex = 0;
-    int numberFromKeys = 0;
-    String configFilename = System.getProperty("user.dir") + "/midi.txt";//default filename
-    String setlistFilename = System.getProperty("user.dir") + "/setlist.txt";//default filename
+    //String configFilename = System.getProperty("user.dir") + "/midi.txt";//default filename
+    //String setlistFilename = System.getProperty("user.dir") + "/setlist.txt";//default filename
+    String configFilename = new File("").getAbsoluteFile().getAbsolutePath() + "/midi.txt";
+    String setlistFilename = new File("").getAbsoluteFile().getAbsolutePath() + "/setlist.txt";
     boolean printMidiReceived = false;
     int largeFontSize = 32;
     int smallFontSize = 16;
+    public String computedPlaceHolder = "=";
+    SamplePlayer samplePlayer = new SamplePlayer();
+    boolean isWaiting = true;
 
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
 
+        final String[] arguments = args;
         //Use an appropriate Look and Feel
         try {
-            UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (UnsupportedLookAndFeelException | IllegalAccessException | InstantiationException | ClassNotFoundException ex) {
             ex.printStackTrace();
         }
-        // Turn off metal's use of bold fonts //
-        UIManager.put("swing.boldMetal", Boolean.FALSE);
 
         //Schedule a job for event dispatch thread:
         //creating and showing this application's GUI.
         javax.swing.SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                createAndShowGUI();
+                createAndShowGUI(arguments);
             }
         });
     }
@@ -125,16 +139,29 @@ public class MidiSetlistController extends JFrame
     /**
      * Create the GUI and show it.
      */
-    private static void createAndShowGUI() {
+    private static void createAndShowGUI(String[] args) {
 
         //Create and set up the window.
         MidiSetlistController frame = new MidiSetlistController("Midi Setlist Controller");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
+     
+
+        if (args.length >= 1) {
+            frame.configFilename = args[0];
+        }
+        if (args.length >= 2) {
+            frame.setlistFilename = args[1];
+        }
 
         //Set up the content pane.
         frame.addComponentsToPane();
-
+        URL imageURL = frame.getClass().getClassLoader().getResource("midi.gif");
+        Image image = Toolkit.getDefaultToolkit().getImage(imageURL);
+        if(imageURL != null){
+            frame.setIconImage(image);
+        }
+        
         //Display the window.
         frame.pack();
         frame.setVisible(true);
@@ -181,25 +208,28 @@ public class MidiSetlistController extends JFrame
 
         //Midi menu items
         JMenuItem menuItem = new JMenuItem("Select midi config file", KeyEvent.VK_S);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, ActionEvent.CTRL_MASK));
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         menuItem.addActionListener(this);
         menuMidi.add(menuItem);
 
-        //a group of JMenuItems
         menuItem = new JMenuItem("Edit midi config", KeyEvent.VK_E);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, ActionEvent.CTRL_MASK));
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         menuItem.addActionListener(this);
         menuMidi.add(menuItem);
 
         menuItem = new JMenuItem("Reload midi config", KeyEvent.VK_R);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, ActionEvent.CTRL_MASK));
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         menuItem.addActionListener(this);
         menuMidi.add(menuItem);
 
         menuMidi.addSeparator();
 
+        menuItem = new JMenuItem("Select midi device", KeyEvent.VK_S);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        menuItem.addActionListener(this);
+        menuMidi.add(menuItem);
+
         menuItem = new JMenuItem("List midi devices", KeyEvent.VK_D);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, ActionEvent.CTRL_MASK));
         menuItem.addActionListener(this);
         menuMidi.add(menuItem);
 
@@ -228,23 +258,30 @@ public class MidiSetlistController extends JFrame
         menuMidi.add(menuItem);
 
         menuItem = new JMenuItem("Toggle midi check while sending", KeyEvent.VK_M);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_U, ActionEvent.CTRL_MASK));
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_U, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        menuItem.addActionListener(this);
+        menuMidi.add(menuItem);
+
+        menuMidi.addSeparator();
+
+        menuItem = new JMenuItem("Send midi code", KeyEvent.VK_C);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         menuItem.addActionListener(this);
         menuMidi.add(menuItem);
 
         //Setlist menu items
         menuItem = new JMenuItem("Select setlist file", KeyEvent.VK_S);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         menuItem.addActionListener(this);
         menuSetlist.add(menuItem);
 
         menuItem = new JMenuItem("Reload setlist", KeyEvent.VK_R);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.CTRL_MASK));
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         menuItem.addActionListener(this);
         menuSetlist.add(menuItem);
 
         menuItem = new JMenuItem("Edit setlist", KeyEvent.VK_E);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, ActionEvent.CTRL_MASK));
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         menuItem.addActionListener(this);
         menuSetlist.add(menuItem);
 
@@ -254,46 +291,54 @@ public class MidiSetlistController extends JFrame
         menuItem.addActionListener(this);
         menuSetlist.add(menuItem);
 
+        menuItem = new JMenuItem("Check setlist", KeyEvent.VK_C);
+        menuItem.addActionListener(this);
+        menuSetlist.add(menuItem);
+
+        menuItem = new JMenuItem("Go to item...", KeyEvent.VK_G);
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        menuItem.addActionListener(this);
+        menuSetlist.add(menuItem);
+
         //Display menu items
         menuItem = new JMenuItem("Toggle incoming midi", KeyEvent.VK_M);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, ActionEvent.CTRL_MASK));
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         menuItem.addActionListener(this);
         menuDisplay.add(menuItem);
 
         menuItem = new JMenuItem("Toggle colors", KeyEvent.VK_C);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.CTRL_MASK));
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         menuItem.addActionListener(this);
         menuDisplay.add(menuItem);
 
         menuDisplay.addSeparator();
 
         menuItem = new JMenuItem("Increase font dashboard", KeyEvent.VK_D);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, ActionEvent.CTRL_MASK));
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         menuItem.addActionListener(this);
         menuDisplay.add(menuItem);
 
         menuItem = new JMenuItem("Decrease font dashboard", KeyEvent.VK_F);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, ActionEvent.CTRL_MASK));
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         menuItem.addActionListener(this);
         menuDisplay.add(menuItem);
 
         menuItem = new JMenuItem("Increase font main display", KeyEvent.VK_I);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_CLOSE_BRACKET, ActionEvent.CTRL_MASK));
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_CLOSE_BRACKET, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         menuItem.addActionListener(this);
         menuDisplay.add(menuItem);
 
         menuItem = new JMenuItem("Decrease font main display", KeyEvent.VK_O);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_OPEN_BRACKET, ActionEvent.CTRL_MASK));
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_OPEN_BRACKET, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         menuItem.addActionListener(this);
         menuDisplay.add(menuItem);
 
         menuDisplay.addSeparator();
 
         menuItem = new JMenuItem("Clear screen", KeyEvent.VK_S);
-        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, ActionEvent.CTRL_MASK));
+        menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         menuItem.addActionListener(this);
         menuDisplay.add(menuItem);
-
 
         menuItem = new JMenuItem("Write log", KeyEvent.VK_L);
         menuItem.addActionListener(this);
@@ -301,15 +346,12 @@ public class MidiSetlistController extends JFrame
 
         this.setJMenuBar(menuBar);
 
-
-
         //Add display area
         displayArea = new JTextArea();
         displayArea.setEditable(false);
 
         //displayArea.setTabSize(8);
         displayArea.setLineWrap(true);
-        displayArea.addKeyListener(this); //if keys are pressed when the display area is in focus.
         JScrollPane scrollPane = new JScrollPane(displayArea);
 
         ContextMenuMouseListener mouseListener = new ContextMenuMouseListener(); // Add mouse context menu
@@ -320,7 +362,6 @@ public class MidiSetlistController extends JFrame
         displayAreaCurrent.setEditable(false);
         displayAreaCurrent.setLineWrap(false);
         displayAreaCurrent.setTabSize(6);
-        displayAreaCurrent.addKeyListener(this); //if keys are pressed when the display area is in focus.
         displayAreaCurrent.addMouseListener(mouseListener);
         JScrollPane scrollPaneCurrent = new JScrollPane(displayAreaCurrent);
         scrollPaneCurrent.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -339,6 +380,7 @@ public class MidiSetlistController extends JFrame
             runSetlistItemNumber(0);
         }
         displayArea.requestFocusInWindow();
+        addBindings();
     }
 
     @Override
@@ -348,8 +390,8 @@ public class MidiSetlistController extends JFrame
 
         //Translate different menu options into differen actions:
         switch (menuItem) {
-            case "Load midi config file":
-                if (chooseConfigFile()) {
+            case "Select midi config file":
+                if (chooseConfigFileDialog()) {
                     readMidiConfig();
                     openMidiDevice();
                 }
@@ -360,6 +402,9 @@ public class MidiSetlistController extends JFrame
             case "Reload midi config":
                 readMidiConfig();
                 openMidiDevice();
+                break;
+            case "Select midi device":
+                selectMidiDeviceDialog();
                 break;
             case "List midi devices":
                 listMidiDevices();
@@ -382,8 +427,11 @@ public class MidiSetlistController extends JFrame
             case "Toggle midi check while sending":
                 checkMidiDeviceAvailable = !checkMidiDeviceAvailable;
                 break;
-            case "Choose setlist file":
-                if (chooseSetlistFile()) {
+            case "Send midi code":
+                sendMidiCodeDialog();
+                break;
+            case "Select setlist file":
+                if (chooseSetlistFileDialog()) {
                     readSetlist();
                 }
                 break;
@@ -395,6 +443,12 @@ public class MidiSetlistController extends JFrame
                 break;
             case "Display setlist":
                 displaySetlist();
+                break;
+            case "Check setlist":
+                checkSetlist();
+                break;
+            case "Go to item...":
+                chooseSetListItemDialog();
                 break;
             case "Toggle colors":
                 toggleColors();
@@ -431,57 +485,114 @@ public class MidiSetlistController extends JFrame
         return classString.substring(dotIndex + 1);
     }
 
-    // When key is pressed
-    private void handleKey(KeyEvent e) {
+    protected void addBindings() {
 
-        //Find out which key is pressed
-        String key;
-        if (e.getID() == KeyEvent.KEY_TYPED) {
-            Character c = e.getKeyChar();
-            key = c.toString();
-        } else {
-            int keyCode = e.getKeyCode();
-            key = KeyEvent.getKeyText(keyCode);
-        }
+        Action up = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                runSetlistPrevious();
+            }
+        };
 
-        if (isNumeric(key)) {
-            // write number to the screen (and keep it)
-            numberFromKeys = 10 * numberFromKeys + intValue(key);
-            write(key);
-        }
-        switch (key) {
-            case "Up":
-                runSetlistPrevious();
-                break;
-            case "Left":
-                runSetlistPrevious();
-                break;
-            case "Down":
+        Action down = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
                 runSetlistNext();
-                break;
-            case "Right":
+            }
+        };
+
+        Action downSilent = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                samplePlayer.isPlayingWav = false;
+                isWaiting = false;
                 runSetlistNext();
-                break;
-            case "Space":
-                runSetlistNext();
-                break;
-            case "Home":
-                runSetlistStart();
-                break;
-            case "End":
-                runSetlistEnd();
-                break;
-            case "Page Up":
+                samplePlayer.isPlayingWav = true;
+                isWaiting = true;
+            }
+        };
+
+        Action pageup = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
                 runSetListPreviousPreset();
-                break;
-            case "Page Down":
+            }
+        };
+
+        Action pagedown = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
                 runSetListNextPreset();
-                break;
-            case "Enter":
-                runSetlistItemFromKeyboard();
-                break;
-        }
-        displayAreaCurrent.requestFocusInWindow();
+            }
+        };
+
+        Action home = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                runSetlistStart();
+            }
+        };
+
+        Action end = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                runSetlistEnd();
+            }
+        };
+
+        Action enter = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                runSetlistItemNumber(currentSetListIndex);
+            }
+        };
+        displayArea.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0, true), "up");
+        displayArea.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0, true), "up");
+
+        displayArea.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "down");
+        displayArea.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0, true), "downSilent");
+        displayArea.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0, true), "downSilent");
+
+        displayArea.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP, 0, true), "pageup");
+        displayArea.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_DOWN, 0, true), "pagedown");
+
+        displayArea.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_HOME, 0, true), "home");
+        displayArea.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_END, 0, true), "end");
+
+        displayArea.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, true), "enter");
+
+        displayArea.getActionMap().put("up", up);
+        displayArea.getActionMap().put("down", down);
+        displayArea.getActionMap().put("downSilent", downSilent);
+        displayArea.getActionMap().put("pageup", pageup);
+        displayArea.getActionMap().put("pagedown", pagedown);
+        displayArea.getActionMap().put("home", home);
+        displayArea.getActionMap().put("end", end);
+        displayArea.getActionMap().put("enter", enter);
+
+        displayAreaCurrent.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0, true), "up");
+        displayAreaCurrent.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, 0, true), "up");
+
+        displayAreaCurrent.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "down");
+        displayAreaCurrent.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0, true), "downSilent");
+        displayAreaCurrent.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0, true), "downSilent");
+
+        displayAreaCurrent.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP, 0, true), "pageup");
+        displayAreaCurrent.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_DOWN, 0, true), "pagedown");
+
+        displayAreaCurrent.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_HOME, 0, true), "home");
+        displayAreaCurrent.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_END, 0, true), "end");
+
+        displayAreaCurrent.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, true), "enter");
+
+        displayAreaCurrent.getActionMap().put("up", up);
+        displayAreaCurrent.getActionMap().put("down", down);
+        displayAreaCurrent.getActionMap().put("downSilent", downSilent);
+        displayAreaCurrent.getActionMap().put("pageup", pageup);
+        displayAreaCurrent.getActionMap().put("pagedown", pagedown);
+        displayAreaCurrent.getActionMap().put("home", home);
+        displayAreaCurrent.getActionMap().put("end", end);
+        displayAreaCurrent.getActionMap().put("enter", enter);
     }
 
     ///////NAVIGATION////////////////
@@ -519,7 +630,7 @@ public class MidiSetlistController extends JFrame
         int previousPreset = currentSetListIndex;
         while (!previousPresetFound && previousPreset > 0) {
             previousPreset--;
-            if (setlist.get(previousPreset).getPreset() != 0) {
+            if (!setlist.get(previousPreset).getPreset().equals("")) {
                 //found next preset
                 previousPresetFound = true;
             }
@@ -536,25 +647,12 @@ public class MidiSetlistController extends JFrame
         while (!nextPresetFound & nextPreset < setlist.size() - 1) {
             nextPreset++;
 
-            if (setlist.get(nextPreset).getPreset() != 0) {
+            if (!setlist.get(nextPreset).getPreset().equals("")) {
                 //found next preset
                 nextPresetFound = true;
                 runSetlistItemNumber(nextPreset);
             }
         }
-    }
-
-    // Goes to the setlist item entered on the keyboard or the current one if nothing (valid) was entered.
-    public void runSetlistItemFromKeyboard() {
-        if (numberFromKeys > 0 && numberFromKeys < setlist.size()) {
-            //Run the setlist item entered on the keyboard
-            writeLine("");
-            runSetlistItemNumber(numberFromKeys);
-        } else {
-            //Run the current selection
-            runSetlistItemNumber(currentSetListIndex);
-        }
-        numberFromKeys = 0;
     }
 
     // Determine the strategy to go from the current set list index to a particular position and execute that strategy.
@@ -572,7 +670,7 @@ public class MidiSetlistController extends JFrame
             //Is there a later preset we can start from?
             int latestPresetFound = comingFrom + 1;
             for (int i = latestPresetFound; i <= goingTo; i++) {
-                if (setlist.get(i).getPreset() != 0) {
+                if (!setlist.get(i).getPreset().equals("")) {
                     //found later preset at nr i.
                     latestPresetFound = i;
                 }
@@ -591,7 +689,7 @@ public class MidiSetlistController extends JFrame
 
             // Is there a preset change in the meantime (note that goingTo may have a preset, but that means there is NO preset change
             for (int i = comingFrom; i > goingTo; i--) {
-                if (setlist.get(i).getPreset() != 0) {
+                if (!setlist.get(i).getPreset().equals("")) {
                     differentPreset = true;
                 }
             }
@@ -612,17 +710,23 @@ public class MidiSetlistController extends JFrame
                 boolean presetFound = false;
                 int previousPreset = goingTo;
                 while (!presetFound && previousPreset > 0) {
-                    previousPreset--;
-                    if (setlist.get(previousPreset).getPreset() != 0) {
+                    if (!setlist.get(previousPreset).getPreset().equals("")) {
                         presetFound = true;
+                    } else {
+                        previousPreset--;
                     }
                 }
 
                 //We need to go from presetFound up to goingTo.
+                //We disable any samples being played here
+                samplePlayer.isPlayingWav = false;
+                isWaiting = false;
                 for (int i = previousPreset; i <= goingTo; i++) {
                     currentSetListIndex = i;
                     runCurrentSetlistItem(false);
                 }
+                samplePlayer.isPlayingWav = true;
+                isWaiting = true;
             }
         }
         // Add outcome to the display
@@ -631,81 +735,70 @@ public class MidiSetlistController extends JFrame
 
     //Run current set list item
     public void runCurrentSetlistItem(boolean reverseDirection) {
-
         System.out.println("Loading preset " + currentSetListIndex + ", reverse codes: " + reverseDirection);
+//        if(reverseDirection == false){
+//            writeLine(currentSetListIndex + ": " + setlist.get(currentSetListIndex).toString());
+//        }
         SetlistItem item = setlist.get(currentSetListIndex);
         String[] midiCodes = item.getMidiCodes();
-        Integer studioset = item.getPreset();
+        String preset = item.getPreset();
 
         // Normal direction
         if (!reverseDirection) {
 
             // Send a studio set message if it is needed
-            if (studioset > 0) {
-                if (midiCodesMap.containsKey(studioset.toString())) {
-                    sendMessage(midiCodesMap.get(studioset.toString()));
-                } else {
-                    writeLine("Error 6a, midicodes map doesn't contain studioset " + studioset);
-                }
+            if (!preset.equals("")) {
+                sendMessage(preset);
             }
 
             // Send other midi codes
             if (midiCodes != null) {
                 for (String s : midiCodes) {
-                    if (midiCodesMap.containsKey(s)) {
-                        sendMessage(midiCodesMap.get(s));
-                    } else {
-                        sendMessage(s);
+
+                    //Check whether we have a 'from > to'. Now we need the 'to'
+                    String codeTo = s;
+                    if (s.contains(">")) {
+                        codeTo = s.split(">")[1];
                     }
+                    sendMessage(codeTo);
                 }
             }
-
         } else {
 
             // Reverse direction, so we reverse the codes!
-
             // Do we have codes?
             if (midiCodes != null) {
 
                 // For each of the codes
                 for (String s : item.getMidiCodes()) {
 
-                    // Do we have a reverse code?
-                    if (midiCodesOpposits.containsKey(s)) {
-
-                        // Send the reverse code
-                        String reverseMidiCode = midiCodesOpposits.get(s);
-                        if (midiCodesMap.containsKey(reverseMidiCode)) {
-                            sendMessage(midiCodesMap.get(reverseMidiCode));
-                        } else {
-                            sendMessage(reverseMidiCode);
-                        }
-
+                    String codeTo = s;
+                    if (s.contains(">")) {
+                        //from>to overrides the defined opposites
+                        codeTo = s.split(">")[0];
                     } else {
-
-                        // The reverse is not defined, so we send the original
-                        if (midiCodesMap.containsKey(s)) {
-                            sendMessage(midiCodesMap.get(s));
-                        } else {
-                            sendMessage(s);
-                        }
+                        // Do we have an opposite code, compute it.
+                        codeTo = computeOppositeMidiCode(s);
+                        System.out.println("Opposite code for " + s + " is " + codeTo);
                     }
+                    //Send the code (original if the reverse could not be computed
+                    sendMessage(codeTo);
                 }
             }
         }
     }
 
-    //Writes the menu options to the text area
+//Writes the menu options to the text area
     public void writeMenu() {
         writeLine("Config file: " + configFilename
                 + newline + "Setlist file: " + setlistFilename
                 + newline
-                + newline + "Navigation:\tUse arrow keys to navigate (up/left for the previous item, right/down/space or pedal for the next item), or type number and press enter for a particular item"
-                + newline + "\tUse Page up for previous preset, Page down for next preset, and press pedal for next item"
+                + newline + "Navigation:\tUse arrow keys to navigate (up/left for the previous item, right/down/space for the next item), or use CTRL-G and type number for a particular item"
+                + newline + "\tUse page up for previous preset, page down for next preset, pedal for next item (if trigger configured as such), home for the first item, end for the last"
                 + newline);
     }
 
-    private boolean chooseConfigFile() {
+    private boolean chooseConfigFileDialog() {
         int returnVal = fc.showOpenDialog(this);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
@@ -740,6 +833,9 @@ public class MidiSetlistController extends JFrame
                     if (lineSplit[0].equals("Device")) {
                         deviceName = lineSplit[1];
                         writeLine("Midi device configured: " + deviceName);
+                        if (device != null) {
+                            writeLine("Midi device currently opened: " + device.getDeviceInfo().getName());
+                        }
                     } else if (lineSplit[0].equals("Trigger")) {
 
                         String key = lineSplit[1];
@@ -783,7 +879,9 @@ public class MidiSetlistController extends JFrame
                     } else {
                         if (lineSplit.length >= 3) {
                             midiCodesMap.put(lineSplit[0], lineSplit[2]);
-                            midiCodesOpposits.put(lineSplit[0], lineSplit[1]);
+                            if (!lineSplit[1].equals("")) {
+                                midiCodesOpposits.put(lineSplit[0], lineSplit[1]);
+                            }
                         } else {
                             writeLine("Malformed midi code: " + line);
                         }
@@ -795,6 +893,30 @@ public class MidiSetlistController extends JFrame
         }
         //Find the midi device
         selectMidiDevice(deviceName);
+    }
+
+    private void selectMidiDeviceDialog() {
+
+        MidiDevice.Info[] infos = MidiSystem.getMidiDeviceInfo();
+        Object[] options = new String[infos.length];
+        for (int i = 0; i < infos.length; i++) {
+            options[i] = infos[i].getName();
+        }
+        String s = (String) JOptionPane.showInputDialog(
+                frame,
+                "Midi devices available",
+                "Select midi device",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                options,
+                options[0]);
+
+        //If a string was returned, say so.
+        if ((s != null) && (s.length() > 0)) {
+            selectMidiDevice(s);
+            openMidiDevice();
+        }
+
     }
 
     //Write out the midi codes 
@@ -828,7 +950,7 @@ public class MidiSetlistController extends JFrame
     }
 
     //Chooses a setlist file
-    private boolean chooseSetlistFile() {
+    private boolean chooseSetlistFileDialog() {
         int returnVal = fc.showOpenDialog(this);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
@@ -836,6 +958,33 @@ public class MidiSetlistController extends JFrame
             return true;
         }
         return false;
+    }
+
+    private void chooseSetListItemDialog() {
+
+        String name = JOptionPane.showInputDialog(new JFrame(), "Which setlist item do you want to go to?");
+
+        if (isNumeric(name)) {
+            int value = intValue(name);
+            if (value >= 0 && value <= setlist.size() - 1) {
+                runSetlistItemNumber(value);
+            } else {
+                JOptionPane.showMessageDialog(this.frame, "This is not a present setlist item: " + name);
+            }
+        } else {
+            JOptionPane.showMessageDialog(this.frame, "Not a number: " + name);
+        }
+    }
+
+    private void sendMidiCodeDialog() {
+
+        String message = JOptionPane.showInputDialog(null, "Send midi code");
+        if (message != null) {
+            if (!message.equals("")) {
+                sendMessage(message);
+                writeLine("Sending " + message);
+            }
+        }
     }
 
     //Read setlist from the selected file
@@ -851,7 +1000,7 @@ public class MidiSetlistController extends JFrame
 
         setlist = new ArrayList<>();
         String mostRecentSongName = "";
-        HashMap<String,String> mostRecentMidiCodeLabels = null;
+        HashMap<String, String> mostRecentMidiCodeLabels = null;
         try {
             while (reader.ready()) {
                 name = reader.readLine();
@@ -887,13 +1036,12 @@ public class MidiSetlistController extends JFrame
     }
 
     //Writes out the setlist
-
     //Writes out the setlist
     public void checkSetlist() {
         ArrayList<String> codes = new ArrayList<>();
-
+//        writeLine("Checking for inconsistencies in setlist...");
         for (SetlistItem item : setlist) {
-            if (item.getPreset() != 0) {
+            if (!item.getPreset().equals("")) {
                 codes = new ArrayList<>();
             } else {
                 for (String code : item.getMidiCodes()) {
@@ -915,9 +1063,10 @@ public class MidiSetlistController extends JFrame
                 }
             }
         }
+//        writeLine("Inconsistency check completed.");
     }
 
-    //Finds the midi device in the system with a name 
+    //Finds the midi device     in the system with a name 
     public void selectMidiDevice(String name) {
         MidiDevice.Info[] infos = MidiSystem.getMidiDeviceInfo();
         boolean found = false;
@@ -938,10 +1087,12 @@ public class MidiSetlistController extends JFrame
                 }
             } catch (MidiUnavailableException e) {
                 writeLine("Could not open midi device.");
+                errorColor();
             }
         }
         if (found == false) {
             writeLine("Didn't find the midi device");
+            errorColor();
         }
     }
 
@@ -962,9 +1113,11 @@ public class MidiSetlistController extends JFrame
                 device.open();
                 writeLine("Midi sender is now opened");
                 listenerShouldBeReopened = true;
+                errorResolvedColor();
             } catch (MidiUnavailableException e) {
                 if (checkMidiDeviceAvailable) {
                     writeLine("Midi device couldn't be found");
+                    errorColor();
                 }
             }
         }
@@ -1055,6 +1208,14 @@ public class MidiSetlistController extends JFrame
         }
     }
 
+    public void errorColor() {
+        displayAreaCurrent.setBackground(Color.RED);
+    }
+
+    public void errorResolvedColor() {
+        displayAreaCurrent.setBackground(displayArea.getBackground());
+    }
+
     public void increaseLargeFont() {
         largeFontSize++;
         updateFonts();
@@ -1080,7 +1241,10 @@ public class MidiSetlistController extends JFrame
         displayAreaCurrent.setFont(new java.awt.Font("Arial", 0, largeFontSize));
     }
 
-    public void sendMessage(String messageBody) {
+    public void sendMessage(String message) {
+        
+        System.out.println("Sending: " + message);
+        String messageBody = computeMidiCode(message);
 
         // Check whether the midi device is there
         if (checkMidiDeviceAvailable) {
@@ -1093,41 +1257,86 @@ public class MidiSetlistController extends JFrame
             }
         }
 
-        if (messageBody.startsWith("PC") || messageBody.startsWith("CC")) {
+        if (messageBody.startsWith("WAV")) {
+            displayAreaCurrent.setText("WAV...");
             String[] messagePieces = messageBody.split("-");
-            int messageType = 0;
-            if (messagePieces[0].equals("PC")) {
-                messageType = ShortMessage.PROGRAM_CHANGE;
+            String fileName = messagePieces[1];
+            samplePlayer.playSound(fileName);
+        } else if (messageBody.startsWith("WAIT")) {
+            String[] messagePieces = messageBody.split("-");
+            int duration = intValue(messagePieces[1]);
+            System.out.println(Thread.currentThread().getPriority() + " " + Thread.currentThread().getName());
+            displayAreaCurrent.setText("WAIT...");
+            if (isWaiting) {
+                try {
+                    Thread.sleep(duration);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                }
             }
-            if (messagePieces[0].equals("CC")) {
-                messageType = ShortMessage.CONTROL_CHANGE;
-            }
+        } else if (messageBody.startsWith("PC") || messageBody.startsWith("CC")) {
+            String[] messagePieces = messageBody.split("-");
             int channel = intValue(messagePieces[1]) - 1;
             int control = intValue(messagePieces[2]);
             int value = 0;
-            if (messagePieces.length >= 4) {
-                value = intValue(messagePieces[3]);
-            }
-            ShortMessage myMsg = new ShortMessage();
+            int endValue = 0;
+            int duration = 0;
 
-            try {
-                myMsg.setMessage(messageType, channel, control, value);
-            } catch (InvalidMidiDataException ex) {
-                writeLine("Error making midi message " + myMsg.toString());
-            }
-            long timeStamp = -1;
-            try {
-                Receiver rcvr = device.getReceiver();
-                rcvr.send(myMsg, timeStamp);
-            } catch (Exception e) {
-                if (checkMidiDeviceAvailable) {
-                    writeLine("Error in sending PC or CC message: " + messageBody);
+            int messageType = 0;
+            if (messageBody.startsWith("PC")) {
+                messageType = ShortMessage.PROGRAM_CHANGE;
+                //there is a from,to. So we select to.
+                if (messagePieces.length >= 4) {
+                    control = intValue(messagePieces[3]);
                 }
+            }
+            if (messageBody.startsWith("CC")) {
+                messageType = ShortMessage.CONTROL_CHANGE;
+
+                value = intValue(messagePieces[3]);
+                if (messagePieces.length == 5) {
+                    value = intValue(messagePieces[4]);
+                }
+                if (messagePieces.length >= 6) {
+                    value = intValue(messagePieces[3]);
+                    endValue = intValue(messagePieces[4]);
+                    duration = intValue(messagePieces[5]);
+                }
+            }
+
+            if (duration > 0) {
+                long startTime = System.currentTimeMillis();
+                double elapsedTime = 0d;
+                int oldValue = -1000;
+                while (elapsedTime < duration) {
+
+                    elapsedTime = (new Date()).getTime() - startTime;
+                    double fraction = elapsedTime / (double) duration;
+                    if (fraction > 1) {
+                        fraction = 1;
+                    } //cap the fraction.
+                    int currentValue = (int) (value - (value - endValue) * fraction);
+
+                    if (currentValue != oldValue) {
+                        displayAreaCurrent.setText("Sending CC" + channel + " control " + control + " value " + currentValue);
+                        sendShortMessage(messageType, channel, control, currentValue, messageBody);
+                        oldValue = currentValue;
+                    }
+                }
+            } else {
+                sendShortMessage(messageType, channel, control, value, messageBody);
             }
         } else {
             SysexMessage sysmsg = new SysexMessage();
             try {
-                byte[] messageData = byteStringToByteArray(messageBody);
+                String body = messageBody;
+                int digits = 0;
+                if (messageBody.contains(computedPlaceHolder)) {
+                    digits = intValue(messageBody.split(" ")[0]);
+                    String toRemove = digits + " ";
+                    body = messageBody.replaceFirst(toRemove, "");
+                }
+                byte[] messageData = byteStringToByteArrayComputed(body, digits);
                 sysmsg.setMessage(messageData, messageData.length);
             } catch (Exception ex) {
                 writeLine("Error 6c: bad midi message: " + messageBody);
@@ -1144,13 +1353,42 @@ public class MidiSetlistController extends JFrame
         }
     }
 
-    public byte[] byteStringToByteArray(String s) {
+    public void sendShortMessage(int messageType, int channel, int control, int value, String messageBody) {
+        ShortMessage myMsg = new ShortMessage();
+
+        try {
+            myMsg.setMessage(messageType, channel, control, value);
+        } catch (InvalidMidiDataException ex) {
+            writeLine("Error making midi message " + myMsg.toString());
+        }
+        long timeStamp = -1;
+        try {
+            Receiver rcvr = device.getReceiver();
+            rcvr.send(myMsg, timeStamp);
+        } catch (Exception e) {
+            if (checkMidiDeviceAvailable) {
+                writeLine("Error in sending PC or CC message: type " + messageType + " channel " + channel + " control " + control + " value " + value);
+            }
+        }
+
+    }
+
+    public byte[] byteStringToByteArrayComputed(String s, int digits) {
         String[] stringArray = s.split(" ");
         int len = stringArray.length;
         byte[] data = new byte[len];
         for (int i = 0; i < len; i++) {
-            int j = hexToDecimal(stringArray[i]);
+            String t = stringArray[i];
+            int j = 0;
+            if (t.contains("+" + computedPlaceHolder)) {
+                j = (hexToDecimal(t.substring(0, 2)) + digits) % 128;
+            } else if (t.contains("-" + computedPlaceHolder)) {
+                j = (hexToDecimal(t.substring(0, 2)) + 128 - digits) % 128;
+            } else {
+                j = hexToDecimal(t);
+            }
             data[i] = (byte) j;
+            //System.out.print(decimalToHex(j) + " ");
         }
         return data;
     }
@@ -1184,20 +1422,6 @@ public class MidiSetlistController extends JFrame
         displayArea.setCaretPosition(displayArea.getDocument().getLength());
     }
 
-    //When a key is pressed...
-    @Override
-    public void keyPressed(KeyEvent e) {
-        handleKey(e);
-    }
-
-    @Override
-    public void keyTyped(KeyEvent e) {
-    }
-
-    @Override
-    public void keyReleased(KeyEvent e) {
-    }
-
     public void executeMidiTrigger(MidiTrigger trigger) {
         try {
             Robot robot = new Robot();
@@ -1212,12 +1436,17 @@ public class MidiSetlistController extends JFrame
     }
 
     public static boolean isNumeric(String str) {
-        try {
-            double d = Double.parseDouble(str);
-        } catch (NumberFormatException nfe) {
+        if (str != null) {
+            try {
+
+                double d = Double.parseDouble(str);
+            } catch (NumberFormatException nfe) {
+                return false;
+            }
+            return true;
+        } else {
             return false;
         }
-        return true;
     }
 
     public static int intValue(String str) {
@@ -1322,8 +1551,13 @@ public class MidiSetlistController extends JFrame
                 t.setReceiver(receiver);
             } catch (MidiUnavailableException e) {
                 writeLine("Error receiver 1");
+
             }
         }
+    }
+
+    private void handleKey(KeyEvent e) {
+        //nothing!
     }
 
     public static class MidiListener extends Thread {
@@ -1346,4 +1580,86 @@ public class MidiSetlistController extends JFrame
             }
         }
     }
+
+    public String computeMidiCode(String code) {
+        if (midiCodesMap.containsKey(code)) {
+            return midiCodesMap.get(code);
+        }
+
+        String text = code.substring(0, lastNonNumeric(code) + 1);
+        String digits = code.substring(lastNonNumeric(code) + 1, code.length());
+
+        for (String s : midiCodesMap.keySet()) {
+            if (s.contains(computedPlaceHolder)) {
+                //get all before the x
+                String s1 = s.split(computedPlaceHolder)[0];
+                if (s1.equals(text)) {
+                    return digits + " " + midiCodesMap.get(s);
+                }
+            }
+        }
+        return code;
+    }
+
+    public String computeOppositeMidiCode(String code) {
+        if (midiCodesOpposits.containsKey(code)) {
+            //System.out.println("Midi code configured as is: " + code);
+            return midiCodesOpposits.get(code);
+        }
+
+        String text = code.substring(0, lastNonNumeric(code) + 1);
+        String digits = code.substring(lastNonNumeric(code) + 1, code.length());
+
+        for (String s : midiCodesOpposits.keySet()) {
+            if (s.contains(computedPlaceHolder)) {
+
+                //get all before the x
+                String s1 = s.split(computedPlaceHolder)[0];
+                if (s1.equals(text)) {
+                    //System.out.println("Opposite code for text " + text + " for code " + code + " is code " + s + " with digits " + digits);
+                    return midiCodesOpposits.get(s).replace(computedPlaceHolder, digits);
+                }
+            }
+        }
+
+        if (code.startsWith("CC")) {
+            String[] messagePieces = code.split("-");
+            // if the length is minimal 5, then we have a endvalue specified, means we can go back
+            if (messagePieces.length >= 5) {
+                return "CC-" + messagePieces[1] + "-" + messagePieces[2] + "-" + messagePieces[3];
+            }
+        }
+
+        if (code.startsWith("PC")) {
+            String[] messagePieces = code.split("-");
+            // if the length is minimal 5, then we have a endvalue specified, means we can go back
+            if (messagePieces.length >= 4) {
+                return "PC-" + messagePieces[1] + "-" + messagePieces[2];
+            }
+        }
+
+        if (code.startsWith("WAV")) {
+            //Play no samples if going up.
+            return "WAIT-0";
+        }
+
+        if (code.startsWith("WAIT")) {
+            //Now waiting if going up.
+            return "WAIT-0";
+        }
+
+        System.out.println("No opposite code for " + code);
+        return code;
+    }
+
+    public static final int lastNonNumeric(String s) {
+        for (int i = s.length() - 1; i >= 0; i--) {
+            Character c = s.charAt(i);
+            if (!Character.isDigit(c)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
 }
