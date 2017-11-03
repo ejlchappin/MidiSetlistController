@@ -1,18 +1,51 @@
 Example setlist
 
+;For studiosets
 ;Song name,Place in song,Preset,Midi code labels (code comma label)
-Basic,,1
+Preset 1,,s1
+My favorite song,,s2,+1,Piano,+2,Strings,+3,Organ,+4,Flute
 
-My favorite song,,2,+1,Piano,+2,Strings,+3,Organ,+4,Flute
 ;Song name,Place in song,empty,Midicodes
 ,Verse 1,,+2,-1
+
+;Enable parts
 ,Refrain,,+3,+4
+
+;Disable parts
 ,Bridge,,-2
 
-My next song,,3,+1,Piano,+2,Strings,+3,Organ,+4,Bassoon,PC-1-0,Grand Piano,PC-1-1,Bright Piano
-,30,,+1,+2,+3,+4
-,31,,-1,-2,-3
+;Program changes
+,Part 1 to grand piano,,PC-1-0
+,Part 2 to bright piano,,PC-2-1
+,Reversible program change part 3 from 0 to 1,,PC-3-0-1
+
+;Control changes
 ,50,,CC-1-11-64
 ,51,,CC-1-11-30
-,70,,PC-1-0
-,71,,PC-1-1
+,Reversible control change,,CC-1-11-47-111
+,Reversible control change with duration,,CC-1-11-64-32-100
+;Control change 11 (expression, 7 = volume), from 64 to 32 over 100 ms
+
+;Reversible commands with >
+,Part 1 grand piano to bright piano,,PC-2-0>PC-2-1
+,From +1 to +2,,+1>+2
+,From +3 to -4,,+3>-4
+
+;select part 7
+,74,,p7
+
+;mute part 5
+,75,,M5
+
+;unmute part 2
+,76,,m2
+
+;Part 2: key range 50 till 70
+,77,,l02:50,u02:70
+
+;Change octaves
+,Parts 1 and 2 octaves +1,,o01:5,o02:5
+,Parts 3 and 4 octaves -2,,o01:2,o02:2
+
+;Fancy stuff
+,Play sample Wait 1 second and play again,,WAV-1.wav,WAIT-1000,WAV-1.wav
